@@ -4,10 +4,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:liverestro/features/cart/models/cart_item_model.dart';
 import 'package:liverestro/features/cart/providers/cart_provider.dart';
 import 'package:liverestro/features/restaurant/data/mock_restaurants.dart';
+import 'package:liverestro/features/restaurant/models/restaurant_model.dart';
+import 'package:liverestro/features/restaurant/providers/restaurant_provider.dart';
 import 'package:liverestro/features/restaurant/screens/home_discovery_screen.dart';
 import 'package:liverestro/features/orders/screens/orders_screen.dart';
 import 'package:liverestro/features/profile/screens/profile_screen.dart';
 import 'package:liverestro/features/search/screens/search_screen.dart';
+
+class _TestRestaurantsNotifier extends RestaurantsNotifier {
+  _TestRestaurantsNotifier() : super() {
+    state = MockRestaurants.list;
+  }
+}
 
 void main() {
   group('LiveRestro Cart & Promo Business Logic Tests', () {
@@ -62,8 +70,11 @@ void main() {
   group('LiveRestro UI Widget Tests', () {
     testWidgets('Renders HomeDiscoveryScreen with search shortcut and categories', (WidgetTester tester) async {
       await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(
+        ProviderScope(
+          overrides: [
+            rawRestaurantsProvider.overrideWith((ref) => _TestRestaurantsNotifier()),
+          ],
+          child: const MaterialApp(
             home: HomeDiscoveryScreen(),
           ),
         ),
