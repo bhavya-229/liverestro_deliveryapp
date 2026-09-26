@@ -28,9 +28,9 @@ class RestaurantsNotifier extends StateNotifier<List<RestaurantModel>> {
   }
 }
 
-final restaurantListProvider = Provider<List<RestaurantModel>>((ref) {
-  final query = ref.watch(restaurantSearchQueryProvider).trim().toLowerCase();
-  final categoryFilter = ref.watch(selectedCategoryFilterProvider);
+/// All restaurants strictly within the user's active delivery radius (15km), sorted by nearest first.
+/// Pure veg filtering applied if user has selected veg-only.
+final nearbyRestaurantsProvider = Provider<List<RestaurantModel>>((ref) {
   final user = ref.watch(authProvider).user;
   final isVegOnlyUser = user?.isVegOnly ?? false;
   final activeAddress = ref.watch(locationProvider).activeAddress;
@@ -39,9 +39,9 @@ final restaurantListProvider = Provider<List<RestaurantModel>>((ref) {
   const distanceCalc = ll.Distance();
   final userLatLng = ll.LatLng(activeAddress.latitude, activeAddress.longitude);
 
-  var rawList = ref.watch(rawRestaurantsProvider);
+  final rawList = ref.watch(rawRestaurantsProvider);
 
-  // 1. Calculate real-time distance from user's active address and filter strictly within delivery radius (e.g. 15 km)
+  // Calculate real-time distance from user's active address and filter strictly within delivery radius (e.g. 15 km)
   final List<RestaurantModel> listWithDistance = [];
 
   for (final restro in rawList) {
@@ -70,11 +70,17 @@ final restaurantListProvider = Provider<List<RestaurantModel>>((ref) {
   // Sort by nearest distance first
   listWithDistance.sort((a, b) => a.distanceKm.compareTo(b.distanceKm));
 
-  var list = listWithDistance;
-
   if (isVegOnlyUser) {
-    list = list.where((r) => r.isPureVeg).toList();
+    return listWithDistance.where((r) => r.isPureVeg).toList();
   }
+
+  return listWithDistance;
+});
+
+final restaurantListProvider = Provider<List<RestaurantModel>>((ref) {
+  final query = ref.watch(restaurantSearchQueryProvider).trim().toLowerCase();
+  final categoryFilter = ref.watch(selectedCategoryFilterProvider);
+  var list = ref.watch(nearbyRestaurantsProvider);
 
   if (categoryFilter != 'All') {
     list = list.where((r) => r.cuisines.contains(categoryFilter)).toList();

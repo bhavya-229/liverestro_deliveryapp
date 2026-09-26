@@ -117,64 +117,111 @@ app.get('/api/v1/restaurants', async (req, res) => {
   try {
     const { search, is_veg, cuisine } = req.query;
 
-    // Try fetching live restaurants from MySQL
+    let dbRestros = [];
+    let dbCategories = [];
+    let dbItems = [];
+
+    // 1. Fetch live restaurants, categories, and items from MySQL
     try {
-      const [dbRestros] = await db.query('SELECT * FROM restaurants WHERE is_active = 1 OR is_active IS NULL');
-      if (dbRestros && dbRestros.length > 0) {
-        let results = dbRestros.map(r => {
-          const fallback = mockRestaurants.find(m => m.RestroID === r.RestroID) || {};
-          return {
-            RestroID: r.RestroID || r.id,
-            RestroName: r.RestroName || r.restaurant_name || fallback.RestroName || 'Restaurant',
-            address: r.address || fallback.address || '',
-            area: r.area || r.city || fallback.area || '',
-            latitude: parseFloat(r.latitude) || fallback.latitude || 22.3039,
-            longitude: parseFloat(r.longitude) || fallback.longitude || 70.8022,
-            rating: parseFloat(r.rating) || fallback.rating || 4.5,
-            review_count: r.review_count || fallback.review_count || 120,
-            delivery_time: r.delivery_time || fallback.delivery_time || '25-35 mins',
-            distance: r.distance || fallback.distance || '1.8 km',
-            cost_for_two: r.cost_for_two || fallback.cost_for_two || '₹300 for two',
-            is_pure_veg: r.is_pure_veg !== undefined ? r.is_pure_veg : (fallback.is_pure_veg || 0),
-            cuisines: r.cuisines ? (typeof r.cuisines === 'string' ? r.cuisines.split(',') : r.cuisines) : (fallback.cuisines || ['North Indian', 'Snacks']),
-            featured_image: r.featured_image || fallback.featured_image || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&auto=format&fit=crop&q=80',
-            offer_text: r.offer_text || fallback.offer_text || 'Flat 20% OFF'
-          };
-        });
-
-        if (search) {
-          const q = search.toLowerCase();
-          results = results.filter(r => 
-            r.RestroName.toLowerCase().includes(q) ||
-            r.cuisines.some(c => c.toLowerCase().includes(q))
-          );
-        }
-        if (is_veg === 'true' || is_veg === '1') {
-          results = results.filter(r => r.is_pure_veg === 1);
-        }
-        if (cuisine && cuisine !== 'All') {
-          results = results.filter(r => 
-            r.cuisines.some(c => c.toLowerCase() === cuisine.toLowerCase())
-          );
-        }
-
-        return res.json({
-          success: true,
-          count: results.length,
-          data: results.map(r => getEnrichedRestaurant(r))
-        });
-      }
+      const [restros] = await db.query("SELECT * FROM restaurants WHERE Status = 'Active' OR Status IS NULL");
+      dbRestros = restros || [];
+      const [cats] = await db.query("SELECT * FROM admin_menu_categories WHERE is_active = 1 OR is_active IS NULL");
+      dbCategories = cats || [];
+      const [itms] = await db.query("SELECT * FROM admin_menu_items WHERE is_available = 1 OR is_available IS NULL");
+      dbItems = itms || [];
     } catch (dbErr) {
       console.warn(`[DB Fetch Failed] Fallback to structured dataset: ${dbErr.message}`);
     }
 
-    // Fallback if DB table is empty or offline
-    let results = mockRestaurants.map(r => getEnrichedRestaurant(r));
+    let sourceRestros = dbRestros.length > 0 ? dbRestros : mockRestaurants;
+
+    // Filter out dummy/scratch rows created by automated test scripts
+    sourceRestros = sourceRestros.filter(r => {
+      const name = (r.RestroName || r.restaurant_name || '').trim();
+      const id = r.RestroID || r.id;
+      // If restaurant has actual menu items, always include it!
+      const hasMenuItems = dbItems.some(i => i.RestroID === id) || mockItems.some(i => i.RestroID === id);
+      if (hasMenuItems) return true;
+      if (name.length <= 2) return false;
+      if (/^test/i.test(name) || /security/i.test(name) || /phase/i.test(name) || /e2e/i.test(name) || /shop/i.test(name) || /outlet/i.test(name) || /user.*restaurant/i.test(name) || /\d{6,}/.test(name)) {
+        return false;
+      }
+      return true;
+    });
+
+    let results = sourceRestros.map(r => {
+      const targetId = r.RestroID || r.id;
+      const fallback = mockRestaurants.find(m => m.RestroID === targetId) || {};
+
+      const dbLat = parseFloat(r.latitude);
+      const dbLng = parseFloat(r.longitude);
+      const lat = (!isNaN(dbLat) && dbLat !== 0) ? dbLat : (fallback.latitude || 22.3039);
+      const lng = (!isNaN(dbLng) && dbLng !== 0) ? dbLng : (fallback.longitude || 70.8022);
+
+      // Find categories
+      let cats = dbCategories.filter(c => c.RestroID === targetId);
+      if (cats.length === 0) {
+        cats = mockCategories.filter(c => c.RestroID === targetId);
+      }
+
+      // Find menu items
+      let itms = dbItems.filter(i => i.RestroID === targetId);
+      if (itms.length === 0) {
+        itms = mockItems.filter(i => i.RestroID === targetId);
+      }
+
+      const enrichedItems = itms.map(item => {
+        const cat = cats.find(c => c.id === item.category_id);
+        const catName = cat ? cat.category_name : (item.category || (r.categories ? r.categories[0] : 'General'));
+        return {
+          id: (item.id || '').toString(),
+          RestroID: targetId.toString(),
+          category_id: item.category_id,
+          item_name: item.item_name || item.name || '',
+          item_description: item.item_description || item.description || '',
+          item_price: parseFloat(item.item_price || item.price || 0),
+          item_image: item.item_image || item.imageUrl || 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&w=400&q=80',
+          is_veg: (item.is_veg === 1 || item.is_veg === '1' || item.isVeg === true) ? 1 : 0,
+          is_bestseller: (item.is_bestseller === 1 || item.is_bestseller === '1' || item.is_favorite === 1 || item.isBestseller === true) ? 1 : 0,
+          rating: parseFloat(item.rating) || 4.5,
+          rating_count: parseInt(item.rating_count || item.ratingCount) || 80,
+          category: catName
+        };
+      });
+
+      const categoryNames = cats.length > 0 
+        ? cats.map(c => c.category_name)
+        : Array.from(new Set(enrichedItems.map(i => i.category)));
+
+      return {
+        RestroID: targetId,
+        RestroName: r.RestroName || r.restaurant_name || fallback.RestroName || 'Restaurant',
+        address: r.RestroAddress || r.address || fallback.address || '',
+        area: r.City || r.area || fallback.area || 'Rajkot',
+        latitude: lat,
+        longitude: lng,
+        rating: parseFloat(r.rating) || fallback.rating || 4.5,
+        review_count: parseInt(r.review_count || fallback.review_count || 120),
+        delivery_time_minutes: parseInt(r.delivery_time_minutes || fallback.delivery_time_minutes || 25),
+        distance_km: parseFloat(r.distance_km || fallback.distance_km || 2.0),
+        price_for_two: parseFloat(r.price_for_two || fallback.price_for_two || 300),
+        is_pure_veg: r.is_pure_veg !== undefined ? (r.is_pure_veg === 1 || r.is_pure_veg === true ? 1 : 0) : (fallback.is_pure_veg ? 1 : 0),
+        is_pos_connected: 1,
+        cuisines: r.cuisines ? (typeof r.cuisines === 'string' ? r.cuisines.split(',').map(s => s.trim()) : r.cuisines) : (fallback.cuisines || (categoryNames.length > 0 ? categoryNames.slice(0, 4) : ['North Indian', 'Fast Food'])),
+        imageUrl: r.imageUrl || r.featured_image || fallback.imageUrl || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&auto=format&fit=crop&q=80',
+        coverUrl: r.coverUrl || fallback.coverUrl || 'https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=1200&q=80',
+        offerTag: r.offerTag || r.offer_text || fallback.offerTag || 'Flat 20% OFF',
+        categories: categoryNames,
+        menuItems: enrichedItems
+      };
+    });
+
     if (search) {
       const q = search.toLowerCase();
       results = results.filter(r => 
         r.RestroName.toLowerCase().includes(q) ||
-        r.cuisines.some(c => c.toLowerCase().includes(q))
+        r.cuisines.some(c => c.toLowerCase().includes(q)) ||
+        r.menuItems.some(i => i.item_name.toLowerCase().includes(q))
       );
     }
     if (is_veg === 'true' || is_veg === '1') {
@@ -327,38 +374,69 @@ app.get('/api/v1/customers/:id/orders', async (req, res) => {
 // ---------------------------------------------------------
 // 5. GET /api/v1/restaurants/:id/menu (Categorized Menu)
 // ---------------------------------------------------------
-app.get('/api/v1/restaurants/:id/menu', (req, res) => {
-  const restroId = req.params.id;
-  const restro = mockRestaurants.find(r => 
-    r.RestroID.toString() === restroId.toString() ||
-    (restroId === 'rest_chatkara' && r.RestroID === 55) ||
-    (restroId === 'rest_prajapati' && r.RestroID === 28) ||
-    (restroId === 'rest_maruti' && r.RestroID === 24)
-  );
+app.get('/api/v1/restaurants/:id/menu', async (req, res) => {
+  try {
+    const rawId = req.params.id;
+    let targetId = parseInt(rawId.replace('rest_', ''));
+    if (isNaN(targetId)) {
+      if (rawId === 'rest_chatkara') targetId = 55;
+      else if (rawId === 'rest_prajapati') targetId = 28;
+      else if (rawId === 'rest_maruti') targetId = 24;
+      else targetId = 69;
+    }
 
-  if (!restro) {
-    return res.status(404).json({ success: false, message: 'Restaurant not found' });
+    let restroName = 'Restaurant';
+    let dbCategories = [];
+    let dbItems = [];
+
+    try {
+      const [restros] = await db.query('SELECT RestroName FROM restaurants WHERE RestroID = ?', [targetId]);
+      if (restros && restros.length > 0) {
+        restroName = restros[0].RestroName;
+      }
+      const [cats] = await db.query('SELECT * FROM admin_menu_categories WHERE RestroID = ? AND (is_active = 1 OR is_active IS NULL)', [targetId]);
+      dbCategories = cats || [];
+      const [itms] = await db.query('SELECT * FROM admin_menu_items WHERE RestroID = ? AND (is_available = 1 OR is_available IS NULL)', [targetId]);
+      dbItems = itms || [];
+    } catch (e) {
+      console.warn(`[Menu DB error] ${e.message}`);
+    }
+
+    // Fallback to mock if DB returned no categories/items
+    if (dbCategories.length === 0 && dbItems.length === 0) {
+      const fallbackRestro = mockRestaurants.find(r => r.RestroID === targetId);
+      if (fallbackRestro) restroName = fallbackRestro.RestroName;
+      dbCategories = mockCategories.filter(c => c.RestroID === targetId);
+      dbItems = mockItems.filter(i => i.RestroID === targetId);
+    }
+
+    const categoriesWithItems = dbCategories.map(c => ({
+      category_id: c.id,
+      category_name: c.category_name,
+      items: dbItems.filter(i => i.category_id === c.id).map(i => ({
+        id: i.id.toString(),
+        restaurantId: targetId.toString(),
+        name: i.item_name || i.name || '',
+        description: i.item_description || i.description || '',
+        price: parseFloat(i.item_price || i.price || 0),
+        imageUrl: i.item_image || i.imageUrl || 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&w=400&q=80',
+        isVeg: (i.is_veg === 1 || i.is_veg === '1' || i.isVeg === true),
+        isBestseller: (i.is_bestseller === 1 || i.is_bestseller === '1' || i.is_favorite === 1 || i.isBestseller === true),
+        rating: parseFloat(i.rating || 4.5),
+        ratingCount: parseInt(i.rating_count || 80),
+        category: c.category_name
+      }))
+    }));
+
+    res.json({
+      success: true,
+      restro_id: targetId,
+      restaurant_name: restroName,
+      categories: categoriesWithItems
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
   }
-
-  const targetId = restro.RestroID;
-  const cats = mockCategories.filter(c => c.RestroID === targetId);
-  const items = mockItems.filter(i => i.RestroID === targetId);
-
-  const categoriesWithItems = cats.map(c => ({
-    category_id: c.id,
-    category_name: c.category_name,
-    items: items.filter(i => i.category_id === c.id).map(i => ({
-      ...i,
-      category: c.category_name
-    }))
-  }));
-
-  res.json({
-    success: true,
-    restro_id: targetId,
-    restaurant_name: restro.RestroName,
-    categories: categoriesWithItems
-  });
 });
 
 // ---------------------------------------------------------

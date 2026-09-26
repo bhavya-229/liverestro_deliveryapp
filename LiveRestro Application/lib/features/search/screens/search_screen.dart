@@ -8,7 +8,8 @@ import '../../../core/constants/app_typography.dart';
 import '../../../core/widgets/floating_nav_bar.dart';
 import '../../order_tracking/models/order_model.dart';
 import '../../order_tracking/providers/order_tracking_provider.dart';
-import '../../restaurant/data/mock_restaurants.dart';
+import '../../restaurant/models/restaurant_model.dart';
+import '../../restaurant/providers/restaurant_provider.dart';
 import '../models/search_result.dart';
 import '../widgets/search_result_item.dart';
 
@@ -32,17 +33,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     'Gujarati Thali',
   ];
 
-  late final List<SearchResult> _allSearchableItems;
-
-  @override
-  void initState() {
-    super.initState();
-    _buildSearchableIndex();
-  }
-
-  void _buildSearchableIndex() {
+  List<SearchResult> _buildSearchableIndex(List<RestaurantModel> restaurants) {
     final List<SearchResult> items = [];
-    final restaurants = MockRestaurants.list;
 
     for (final r in restaurants) {
       // Add restaurant
@@ -52,13 +44,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           type: SearchResultType.restaurant,
           name: r.name,
           subtitle: '${r.cuisines.join(" · ")} · ${r.distanceKm} km',
-          price: '₹${r.priceForTwo} for 2',
+          price: '₹${r.priceForTwo.toInt()} for 2',
           deliveryTime: '${r.deliveryTimeMinutes} min',
           tags: [...r.cuisines, r.name, r.tagline, if (r.isPureVeg) 'Pure Veg'],
         ),
       );
 
-      // Add dishes
+      // Add dishes from in-range restaurant
       for (final dish in r.menuItems) {
         items.add(
           SearchResult(
@@ -81,7 +73,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       }
     }
 
-    _allSearchableItems = items;
+    return items;
   }
 
   @override
@@ -128,10 +120,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     });
   }
 
-  List<SearchResult> get _filteredResults {
+  List<SearchResult> _filterResults(List<SearchResult> allItems) {
     if (_query.isEmpty) return [];
     final lowerQ = _query.toLowerCase();
-    return _allSearchableItems.where((item) {
+    return allItems.where((item) {
       final nameMatches = item.name.toLowerCase().contains(lowerQ);
       final subMatches = item.subtitle.toLowerCase().contains(lowerQ);
       final tagMatches = item.tags.any((t) => t.toLowerCase().contains(lowerQ));
@@ -139,8 +131,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     }).toList();
   }
 
-  List<SearchResult> get _trendingItems {
-    return _allSearchableItems
+  List<SearchResult> _getTrendingItems(List<SearchResult> allItems) {
+    return allItems
         .where((i) => i.tags.contains('Bestseller') || i.type == SearchResultType.restaurant)
         .take(4)
         .toList();
@@ -150,7 +142,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     if (item.type == SearchResultType.restaurant) {
       context.push('/restaurant/${item.id}');
     } else {
-      context.push('/restaurant/${item.restaurantId ?? "rest_chatkara"}');
+      context.push('/restaurant/${item.restaurantId ?? item.id}');
     }
   }
 
@@ -174,7 +166,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final results = _filteredResults;
+    final nearbyRestaurants = ref.watch(nearbyRestaurantsProvider);
+    final allSearchableItems = _buildSearchableIndex(nearbyRestaurants);
+    final results = _filterResults(allSearchableItems);
+    final trendingItems = _getTrendingItems(allSearchableItems);
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBg : AppColors.bgPage,
@@ -321,7 +316,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   child: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 300),
                     child: _query.isEmpty
-                        ? _buildDefaultState(isDark)
+                        ? _buildDefaultState(isDark, trendingItems)
                         : (results.isNotEmpty
                             ? _buildResultsState(results, isDark)
                             : _buildEmptyState(isDark)),
@@ -347,7 +342,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   }
 
   // STATE A: Default State (query is empty)
-  Widget _buildDefaultState(bool isDark) {
+  Widget _buildDefaultState(bool isDark, List<SearchResult> trendingItems) {
     final categories = [
       {'label': 'All', 'icon': AppIcons.restaurant},
       {'label': 'Non-Veg', 'icon': AppIcons.meat},
@@ -531,7 +526,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               ],
             ),
           ),
-          ..._trendingItems.map((item) {
+          ...trendingItems.map((item) {
             return SearchResultItem(
               result: item,
               query: '',

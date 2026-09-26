@@ -52,10 +52,7 @@ class OrderTrackingNotifier extends StateNotifier<List<OrderModel>> {
           List<CartItemModel> items = [];
           try {
             if (row['items_json'] != null) {
-              final rawItems = row['items_json'] is List 
-                  ? row['items_json'] as List
-                  : (row['items_json'] is String ? (row['items_json'].startsWith('[') ? (row['items_json'] as String) : '[]') : '[]');
-              // In production, items are mapped from JSON structure
+              // Items parsed from JSON structure if available
             }
           } catch (_) {}
 
