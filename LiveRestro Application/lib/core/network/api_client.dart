@@ -13,7 +13,43 @@ class ApiClient {
 
   String get _activeBaseUrl => kIsWeb ? ApiEndpoints.localhostUrl : ApiEndpoints.baseUrl;
 
-  // 1. Fetch Restaurants
+  // 1. Authenticate / Fetch Customer Profile from Backend DB
+  Future<Map<String, dynamic>?> authenticateCustomer({
+    required String phoneNumber,
+    String? name,
+    String? email,
+    bool? isVegOnly,
+    String? fcmToken,
+  }) async {
+    if (ApiEndpoints.useOfflineMockOnly) return null;
+
+    try {
+      final uri = Uri.parse('$_activeBaseUrl${ApiEndpoints.customerAuth}');
+      final response = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'mobile_number': phoneNumber,
+          if (name != null && name.isNotEmpty) 'full_name': name,
+          if (email != null && email.isNotEmpty) 'email': email,
+          if (isVegOnly != null) 'is_veg_only': isVegOnly ? 1 : 0,
+          if (fcmToken != null) 'fcm_token': fcmToken,
+        }),
+      ).timeout(const Duration(seconds: 4));
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = json.decode(response.body);
+        if (data['success'] == true && data['data'] != null) {
+          return data['data'];
+        }
+      }
+    } catch (e) {
+      debugPrint('ApiClient.authenticateCustomer failed: $e');
+    }
+    return null;
+  }
+
+  // 2. Fetch Restaurants
   Future<List<RestaurantModel>> getRestaurants({
     String? search,
     bool? isVeg,
@@ -62,7 +98,7 @@ class ApiClient {
     return list;
   }
 
-  // 2. Fetch Restaurant Menu & Categories
+  // 3. Fetch Restaurant Menu & Categories
   Future<List<MenuItemModel>> getRestaurantMenu(String restaurantId) async {
     if (ApiEndpoints.useOfflineMockOnly) {
       final restro = MockRestaurants.list.firstWhere(
@@ -104,14 +140,23 @@ class ApiClient {
     return restro.menuItems;
   }
 
-  // 3. Place / Create Order into LiveRestro POS
+  // 4. Place / Create Order into LiveRestro POS / app_orders
   Future<Map<String, dynamic>?> createOrder({
     required String restaurantId,
+    String? restaurantName,
+    String? customerId,
     required String customerName,
     required String customerPhone,
     required String deliveryAddress,
+    String? deliveryLandmark,
+    double? deliveryLat,
+    double? deliveryLng,
     required String paymentMethod,
     required double totalAmount,
+    double? subtotal,
+    double? taxAmount,
+    double? deliveryCharge,
+    double? discountAmount,
     required List<Map<String, dynamic>> items,
     String? specialNotes,
     double? deliveryTip,
@@ -128,10 +173,19 @@ class ApiClient {
       final uri = Uri.parse('$_activeBaseUrl${ApiEndpoints.createOrder}');
       final payload = {
         'restro_id': restaurantId,
+        'restaurant_name': restaurantName ?? 'Restaurant',
+        'customer_id': customerId,
         'customer_name': customerName,
         'customer_phone': customerPhone,
         'delivery_address': deliveryAddress,
+        'delivery_landmark': deliveryLandmark,
+        'delivery_lat': deliveryLat,
+        'delivery_lng': deliveryLng,
         'payment_method': paymentMethod,
+        'subtotal': subtotal ?? totalAmount,
+        'tax_amount': taxAmount ?? 0.0,
+        'delivery_charge': deliveryCharge ?? 0.0,
+        'discount_amount': discountAmount ?? 0.0,
         'total_amount': totalAmount,
         'items': items,
         'special_notes': specialNotes ?? '',
@@ -156,7 +210,7 @@ class ApiClient {
     return null;
   }
 
-  // 4. Get Live POS Order Status
+  // 5. Get Live POS Order Status
   Future<Map<String, dynamic>?> getOrderStatus(String orderNumber) async {
     if (ApiEndpoints.useOfflineMockOnly) {
       return null;

@@ -14,6 +14,9 @@ class ApiEndpoints {
   // Active base URL for local testing (pointing to your computer on the Wi-Fi network)
   static const String baseUrl = physicalDeviceUrl;
 
+  static const String customerAuth = '/customers/auth';
+  static const String customerAddresses = '/customers';
+
   static const String restaurants = '/restaurants';
   static String restaurantDetails(String id) => '/restaurants/$id';
   static String restaurantMenu(String id) => '/restaurants/$id/menu';

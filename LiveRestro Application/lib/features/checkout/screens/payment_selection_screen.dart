@@ -45,13 +45,22 @@ class _PaymentSelectionScreenState extends ConsumerState<PaymentSelectionScreen>
       if (_selectedPaymentMethod == 'phonepe') methodDisplay = 'PhonePe';
       if (_selectedPaymentMethod == 'paytm') methodDisplay = 'Paytm';
 
-      // Dispatch order to LiveRestro POS API backend
+      // Dispatch order to LiveRestro POS API backend (persisting to app_orders)
       final remoteOrder = await ApiClient().createOrder(
         restaurantId: cartState.restaurantId ?? '55',
+        restaurantName: cartState.restaurantName ?? 'LiveRestro Partner',
+        customerId: user?.id,
         customerName: user?.name ?? 'Customer',
         customerPhone: user?.phoneNumber ?? '9876543210',
         deliveryAddress: locationState.activeAddress.fullAddress,
+        deliveryLandmark: locationState.activeAddress.landmark,
+        deliveryLat: locationState.activeAddress.latitude,
+        deliveryLng: locationState.activeAddress.longitude,
         paymentMethod: methodDisplay,
+        subtotal: cartState.subtotal,
+        taxAmount: cartState.taxes,
+        deliveryCharge: cartState.deliveryFee,
+        discountAmount: cartState.discountAmount,
         totalAmount: cartState.finalAmount,
         items: cartState.items.map((i) => {
           'item_id': i.menuItem.id,
