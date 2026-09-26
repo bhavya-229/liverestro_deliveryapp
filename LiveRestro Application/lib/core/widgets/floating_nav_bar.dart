@@ -4,15 +4,18 @@ import 'package:hugeicons/hugeicons.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_icons.dart';
 import '../constants/app_typography.dart';
+import 'animated_dot.dart';
 
 class FloatingNavBar extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
+  final bool hasActiveOrder;
 
   const FloatingNavBar({
     super.key,
     required this.currentIndex,
     required this.onTap,
+    this.hasActiveOrder = false,
   });
 
   @override
@@ -80,12 +83,12 @@ class FloatingNavBar extends StatelessWidget {
           vertical: 6,
         ),
         decoration: BoxDecoration(
-          color: isActive ? AppColors.flame : Colors.transparent,
+          color: isActive ? AppColors.accent : Colors.transparent,
           borderRadius: BorderRadius.circular(28),
           boxShadow: isActive
               ? [
                   BoxShadow(
-                    color: AppColors.flame.withValues(alpha: 0.35),
+                    color: AppColors.accent.withValues(alpha: 0.35),
                     blurRadius: 10,
                     offset: const Offset(0, 3),
                   ),
@@ -95,10 +98,24 @@ class FloatingNavBar extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            HugeIcon(
-              icon: icon,
-              color: isActive ? Colors.white : AppColors.txtMuted,
-              size: 20,
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                HugeIcon(
+                  icon: icon,
+                  color: isActive ? Colors.white : AppColors.txtMuted,
+                  size: 20,
+                ),
+                if (index == 2 && hasActiveOrder)
+                  const Positioned(
+                    top: -1,
+                    right: -3,
+                    child: AnimatedDot(
+                      size: 6,
+                      color: AppColors.accent,
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 3),
             Text(

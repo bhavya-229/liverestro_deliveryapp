@@ -60,7 +60,7 @@ class _GradientButtonState extends State<GradientButton> {
               boxShadow: widget.isEnabled
                   ? [
                       BoxShadow(
-                        color: AppColors.flame.withValues(alpha: 0.35),
+                        color: AppColors.accent.withValues(alpha: 0.35),
                         blurRadius: 20,
                         offset: const Offset(0, 6),
                       ),

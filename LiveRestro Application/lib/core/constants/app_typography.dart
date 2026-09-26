@@ -85,13 +85,13 @@ class AppTypography {
   static TextStyle get priceTag => GoogleFonts.plusJakartaSans(
     fontSize: 15,
     fontWeight: FontWeight.w800,
-    color: AppColors.flame,
+    color: AppColors.accent, // emerald — was flame, makes prices pop off the plum cards
   );
 
   static TextStyle get priceTagSmall => GoogleFonts.plusJakartaSans(
     fontSize: 12,
     fontWeight: FontWeight.w800,
-    color: AppColors.flame,
+    color: AppColors.accent,
   );
 
   // === CTA BUTTON ===

@@ -266,7 +266,7 @@ class _PaymentSelectionScreenState extends ConsumerState<PaymentSelectionScreen>
           color: isDark ? AppColors.darkCard : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? AppColors.flame : (isDark ? AppColors.darkBorder : AppColors.flame100),
+            color: isSelected ? AppColors.accent : (isDark ? AppColors.darkBorder : AppColors.flame100),
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -315,10 +315,10 @@ class _PaymentSelectionScreenState extends ConsumerState<PaymentSelectionScreen>
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: isSelected ? AppColors.flame : AppColors.txtMuted,
+                  color: isSelected ? AppColors.accent : AppColors.txtMuted,
                   width: 2,
                 ),
-                color: isSelected ? AppColors.flame : Colors.transparent,
+                color: isSelected ? AppColors.accent : Colors.transparent,
               ),
               child: isSelected
                   ? const Center(

@@ -425,6 +425,7 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
             FloatingNavBar(
               currentIndex: 2,
               onTap: _onNavTap,
+              hasActiveOrder: activeOrder != null,
             ),
           ],
         ),

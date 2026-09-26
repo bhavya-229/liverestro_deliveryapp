@@ -1,31 +1,38 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // === FLAME ORANGE (Primary) ===
-  static const Color flame = Color(0xFFFF4500); // Primary CTA, active states
-  static const Color flameDark = Color(0xFFCC2D00); // Gradient start, pressed states
-  static const Color flameMedium = Color(0xFFFF6B2B); // Secondary accents
-  static const Color flame50 = Color(0xFFFFF3EE); // Light tint backgrounds
-  static const Color flame100 = Color(0xFFFFD9C8); // Border colors, dividers
-  static const Color flame200 = Color(0xFFFFB89A); // Disabled states, soft accents
+  // === PRIMARY PLUM (Primary) ===
+  static const Color flame = Color(0xFF714B67); // Primary CTA, active states (Primary Plum)
+  static const Color flameDark = Color(0xFF4D3346); // Gradient start, pressed states (Dark Plum)
+  static const Color flameMedium = Color(0xFFA17E9A); // Secondary accents (Medium Lavender)
+  static const Color flame50 = Color(0xFFF6EEF2); // Light tint backgrounds
+  static const Color flame100 = Color(0xFFD5B7CA); // Border colors, dividers (Light Pinkish-Mauve)
+  static const Color flame200 = Color(0xFFBB9AB2); // Disabled states, soft accents
 
-  // === MANGO ORANGE (Secondary) ===
-  static const Color mango = Color(0xFFFF9500); // Gradient end, highlights
-  static const Color mangoLight = Color(0xFFFFB84D); // Soft mango accents
-  static const Color mango50 = Color(0xFFFFF8F0); // Very light mango tint
+  // === MAUVE MIST (Secondary) ===
+  static const Color mango = Color(0xFFD5B7CA); // Gradient end, highlights (Light Pinkish-Mauve)
+  static const Color mangoLight = Color(0xFFE3CCDA); // Soft mauve accents
+  static const Color mango50 = Color(0xFFFBF6F9); // Very light mauve tint
+
+  // === EMERALD ACCENT (NEW — the "alive" color) ===
+  static const Color accent = Color(0xFF0E7C66); // CTAs, price tags, active states
+  static const Color accentDark = Color(0xFF0A5C4C); // Gradient partner, pressed states
+  static const Color accentLight = Color(0xFF3FA98C); // Hover / soft emerald accents
+  static const Color accentBg = Color(0xFFE3F3EF); // Light emerald tint (badges, chips)
+  static const Color accentBorder = Color(0xFFBFE3D9); // Emerald focus rings / active borders
 
   // === BACKGROUND & SURFACES ===
-  static const Color bgPage = Color(0xFFFFF8F5); // App background (light cream)
+  static const Color bgPage = Color(0xFFF5F0F3); // App background (soft off-white)
   static const Color bgCard = Color(0xFFFFFFFF); // Card surfaces
-  static const Color bgDivider = Color(0xFFFEEEE8); // Section dividers
+  static const Color bgDivider = Color(0xFFEFDEE7); // Section dividers
 
   // === TEXT ===
-  static const Color txtPrimary = Color(0xFF1A1A1A); // Headlines, primary text
-  static const Color txtSecondary = Color(0xFF555555); // Body text, descriptions
-  static const Color txtMuted = Color(0xFF999999); // Placeholders, meta info
+  static const Color txtPrimary = Color(0xFF241820); // Headlines, primary text (near-black plum)
+  static const Color txtSecondary = Color(0xFF5C4B57); // Body text, descriptions
+  static const Color txtMuted = Color(0xFF948593); // Placeholders, meta info
   static const Color txtOnFlame = Color(0xFFFFFFFF); // Text on flame-colored surfaces
 
-  // === SEMANTIC ===
+  // === SEMANTIC (kept clear & recognizable) ===
   static const Color success = Color(0xFF16A34A); // Veg badge, success states
   static const Color successBg = Color(0xFFDCFCE7); // Success background tint
   static const Color nonVeg = Color(0xFFDC2626); // Non-veg badge
@@ -35,30 +42,30 @@ class AppColors {
   static const Color error = Color(0xFFDC2626);
 
   // === DARK MODE OVERRIDES ===
-  static const Color darkBg = Color(0xFF1A1008); // Dark app background
-  static const Color darkCard = Color(0xFF2A1A0E); // Dark card surface
-  static const Color darkBorder = Color(0xFF3D2010); // Dark borders
-  static const Color darkTxt = Color(0xFFFFF3EE); // Dark mode primary text
-  static const Color darkTxt2 = Color(0xFFFFB89A); // Dark mode secondary text
+  static const Color darkBg = Color(0xFF1E1420); // Dark app background
+  static const Color darkCard = Color(0xFF2B1E27); // Dark card surface
+  static const Color darkBorder = Color(0xFF4D3346); // Dark borders (Dark Plum)
+  static const Color darkTxt = Color(0xFFF5F0F3); // Dark mode primary text
+  static const Color darkTxt2 = Color(0xFFD5B7CA); // Dark mode secondary text
 
   // === GRADIENTS ===
   static const LinearGradient heroGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFFCC2D00), Color(0xFFFF4500), Color(0xFFFF9500)],
+    colors: [Color(0xFF4D3346), Color(0xFF714B67), Color(0xFFD5B7CA)],
     stops: [0.0, 0.5, 1.0],
   );
 
   static const LinearGradient ctaGradient = LinearGradient(
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
-    colors: [Color(0xFFCC2D00), Color(0xFFFF4500)],
+    colors: [Color(0xFF0A5C4C), Color(0xFF0E7C66)],
   );
 
   static const LinearGradient storyRingGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFFFF4500), Color(0xFFFF9500)],
+    colors: [Color(0xFF714B67), Color(0xFFD5B7CA)],
   );
 
   static const LinearGradient cardImgGradient = LinearGradient(
@@ -73,7 +80,6 @@ class AppColors {
   static const Color primaryLight = flameMedium;
   static const Color primarySoft = flame50;
   static const Color primaryMuted = flame100;
-  static const Color accent = mango;
   static const Color ratingGold = warning;
   static const Color vegGreen = success;
   static const Color vegGreenLight = successBg;

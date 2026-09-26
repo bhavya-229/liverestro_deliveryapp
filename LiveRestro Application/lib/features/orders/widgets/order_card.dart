@@ -125,7 +125,7 @@ class OrderCard extends StatelessWidget {
                   Text(
                     '₹${order.billAmount.toInt()}',
                     style: AppTypography.priceTagSmall.copyWith(
-                      color: isCancelled ? AppColors.success : AppColors.flame,
+                      color: isCancelled ? AppColors.success : AppColors.accent,
                       fontWeight: FontWeight.w800,
                       fontSize: 14,
                     ),
