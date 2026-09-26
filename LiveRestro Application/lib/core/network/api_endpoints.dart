@@ -16,6 +16,8 @@ class ApiEndpoints {
 
   static const String customerAuth = '/customers/auth';
   static const String customerAddresses = '/customers';
+  static String customerAddressesList(String customerId) => '/customers/$customerId/addresses';
+  static String deleteCustomerAddress(String customerId, String addressId) => '/customers/$customerId/addresses/$addressId';
   static String customerOrders(String customerId) => '/customers/$customerId/orders';
 
   static const String restaurants = '/restaurants';

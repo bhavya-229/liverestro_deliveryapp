@@ -14,8 +14,8 @@ import '../../../core/widgets/diet_icon.dart';
 import '../../../core/widgets/floating_cart_bar.dart';
 import '../../../core/widgets/floating_nav_bar.dart';
 import '../../../core/widgets/offer_banner_card.dart';
-import '../../../core/widgets/story_bubble.dart';
-import '../../../core/widgets/story_viewer.dart';
+// import '../../../core/widgets/story_bubble.dart';
+// import '../../../core/widgets/story_viewer.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../cart/providers/cart_provider.dart';
 import '../../location/providers/location_provider.dart';
@@ -67,6 +67,8 @@ class _HomeDiscoveryScreenState extends ConsumerState<HomeDiscoveryScreen> with 
     }
   }
 
+  // Restaurant stories commented out as requested (hardcoded dummy data)
+  /*
   void _openStory(int initialIndex) {
     final stories = [
       StoryViewerItem(
@@ -106,6 +108,7 @@ class _HomeDiscoveryScreenState extends ConsumerState<HomeDiscoveryScreen> with 
       ),
     );
   }
+  */
 
   void _onNavTap(int index) {
     switch (index) {
@@ -360,7 +363,8 @@ class _HomeDiscoveryScreenState extends ConsumerState<HomeDiscoveryScreen> with 
                   ),
                 ),
 
-                // RESTAURANT STORIES
+                // RESTAURANT STORIES (Commented out as requested - removed hardcoded stories)
+                /*
                 SliverToBoxAdapter(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -405,6 +409,7 @@ class _HomeDiscoveryScreenState extends ConsumerState<HomeDiscoveryScreen> with 
                     ],
                   ),
                 ),
+                */
 
                 // CUISINE FILTER PILLS
                 SliverToBoxAdapter(

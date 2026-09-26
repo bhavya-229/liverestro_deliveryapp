@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import '../../features/restaurant/data/mock_restaurants.dart';
 import '../../features/restaurant/models/restaurant_model.dart';
 import '../../features/restaurant/models/menu_item_model.dart';
+import '../../features/location/models/address_model.dart';
 import 'api_endpoints.dart';
 
 class ApiClient {
@@ -242,5 +243,69 @@ class ApiClient {
       debugPrint('ApiClient.getCustomerOrders failed: $e');
     }
     return [];
+  }
+
+  // 7. Fetch Customer's Saved Addresses
+  Future<List<AddressModel>> getCustomerAddresses(String customerId) async {
+    if (ApiEndpoints.useOfflineMockOnly) return [];
+
+    try {
+      final uri = Uri.parse('$_activeBaseUrl${ApiEndpoints.customerAddressesList(customerId)}');
+      final response = await http.get(uri).timeout(const Duration(seconds: 4));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success'] == true && data['data'] is List) {
+          return (data['data'] as List)
+              .map((jsonItem) => AddressModel.fromJson(Map<String, dynamic>.from(jsonItem)))
+              .toList();
+        }
+      }
+    } catch (e) {
+      debugPrint('ApiClient.getCustomerAddresses failed: $e');
+    }
+    return [];
+  }
+
+  // 8. Save Customer Address to MySQL Database
+  Future<String?> saveCustomerAddress(String customerId, AddressModel address) async {
+    if (ApiEndpoints.useOfflineMockOnly) return null;
+
+    try {
+      final uri = Uri.parse('$_activeBaseUrl${ApiEndpoints.customerAddressesList(customerId)}');
+      final response = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(address.toBackendJson()),
+      ).timeout(const Duration(seconds: 4));
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = json.decode(response.body);
+        if (data['success'] == true && data['address_id'] != null) {
+          return data['address_id'].toString();
+        }
+      }
+    } catch (e) {
+      debugPrint('ApiClient.saveCustomerAddress failed: $e');
+    }
+    return null;
+  }
+
+  // 9. Delete Customer Address from MySQL Database
+  Future<bool> deleteCustomerAddress(String customerId, String addressId) async {
+    if (ApiEndpoints.useOfflineMockOnly) return true;
+
+    try {
+      final uri = Uri.parse('$_activeBaseUrl${ApiEndpoints.deleteCustomerAddress(customerId, addressId)}');
+      final response = await http.delete(uri).timeout(const Duration(seconds: 4));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['success'] == true;
+      }
+    } catch (e) {
+      debugPrint('ApiClient.deleteCustomerAddress failed: $e');
+    }
+    return false;
   }
 }

@@ -316,14 +316,24 @@ app.post('/api/v1/customers/auth', async (req, res) => {
 });
 
 // ---------------------------------------------------------
-// 4. Saved Addresses Persistence (GET & POST)
+// 4. Saved Addresses Persistence (GET, POST & DELETE)
 // ---------------------------------------------------------
 app.get('/api/v1/customers/:id/addresses', async (req, res) => {
   try {
-    const customerId = req.params.id;
+    const rawId = req.params.id;
+    let targetCustomerId = parseInt(rawId);
+    if (isNaN(targetCustomerId)) {
+      const cleanPhone = rawId.replace(/^\+91/, '').replace(/\D/g, '');
+      const [cust] = await db.query(
+        'SELECT id FROM app_customers WHERE mobile_number = ? OR mobile_number LIKE ? LIMIT 1',
+        [rawId, `%${cleanPhone}`]
+      );
+      if (cust.length > 0) targetCustomerId = cust[0].id;
+    }
+
     const [addresses] = await db.query(
       'SELECT * FROM app_customer_addresses WHERE customer_id = ? ORDER BY is_default DESC, id DESC',
-      [customerId]
+      [targetCustomerId || rawId]
     );
     res.json({ success: true, data: addresses });
   } catch (err) {
@@ -333,16 +343,38 @@ app.get('/api/v1/customers/:id/addresses', async (req, res) => {
 
 app.post('/api/v1/customers/:id/addresses', async (req, res) => {
   try {
-    const customerId = req.params.id;
+    const rawId = req.params.id;
+    let targetCustomerId = parseInt(rawId);
+    if (isNaN(targetCustomerId)) {
+      const cleanPhone = rawId.replace(/^\+91/, '').replace(/\D/g, '');
+      const [cust] = await db.query(
+        'SELECT id FROM app_customers WHERE mobile_number = ? OR mobile_number LIKE ? LIMIT 1',
+        [rawId, `%${cleanPhone}`]
+      );
+      if (cust.length > 0) targetCustomerId = cust[0].id;
+    }
+
     const { address_type, complete_address, landmark, latitude, longitude, is_default, recipient_name, recipient_phone } = req.body;
+    const finalCustomerId = targetCustomerId || 1;
+
+    if (is_default) {
+      await db.query(
+        'UPDATE app_customer_addresses SET is_default = 0 WHERE customer_id = ?',
+        [finalCustomerId]
+      );
+    }
+
+    const normalizedType = ['home', 'work', 'other'].includes((address_type || '').toLowerCase())
+      ? (address_type || '').toLowerCase()
+      : 'home';
 
     const [insertRes] = await db.query(
       `INSERT INTO app_customer_addresses 
        (customer_id, address_type, complete_address, landmark, latitude, longitude, is_default, recipient_name, recipient_phone)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        customerId,
-        address_type || 'home',
+        finalCustomerId,
+        normalizedType,
         complete_address || '',
         landmark || '',
         latitude || 0.0,
@@ -358,6 +390,30 @@ app.post('/api/v1/customers/:id/addresses', async (req, res) => {
       message: 'Address saved successfully',
       address_id: insertRes.insertId
     });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.delete('/api/v1/customers/:id/addresses/:addressId', async (req, res) => {
+  try {
+    const { id: rawId, addressId } = req.params;
+    let targetCustomerId = parseInt(rawId);
+    if (isNaN(targetCustomerId)) {
+      const cleanPhone = rawId.replace(/^\+91/, '').replace(/\D/g, '');
+      const [cust] = await db.query(
+        'SELECT id FROM app_customers WHERE mobile_number = ? OR mobile_number LIKE ? LIMIT 1',
+        [rawId, `%${cleanPhone}`]
+      );
+      if (cust.length > 0) targetCustomerId = cust[0].id;
+    }
+
+    await db.query(
+      'DELETE FROM app_customer_addresses WHERE id = ? AND (customer_id = ? OR ? IS NULL)',
+      [addressId, targetCustomerId || rawId, targetCustomerId || rawId]
+    );
+
+    res.json({ success: true, message: 'Address deleted successfully' });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
