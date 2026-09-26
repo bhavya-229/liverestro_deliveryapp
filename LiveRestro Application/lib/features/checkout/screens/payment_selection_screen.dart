@@ -23,27 +23,22 @@ class PaymentSelectionScreen extends ConsumerStatefulWidget {
 }
 
 class _PaymentSelectionScreenState extends ConsumerState<PaymentSelectionScreen> {
-  String _selectedPaymentMethod = 'gpay'; // gpay, phonepe, paytm, other_upi, card, netbanking, cod
+  String _selectedPaymentMethod = 'gpay'; // gpay, phonepe, paytm, other_upi, card, netbanking
 
   void _onPlaceOrder() async {
     final cartState = ref.read(cartProvider);
     final locationState = ref.read(locationProvider);
     final user = ref.read(authProvider).user;
 
-    final isCod = _selectedPaymentMethod == 'cod';
-
-    final success = isCod
-        ? true
-        : await ref.read(paymentProvider.notifier).processPayment(
-            amount: cartState.finalAmount,
-          );
+    final success = await ref.read(paymentProvider.notifier).processPayment(
+      amount: cartState.finalAmount,
+    );
 
     if (!mounted) return;
 
     if (success) {
       // Map display payment method string
       String methodDisplay = 'UPI';
-      if (_selectedPaymentMethod == 'cod') methodDisplay = 'Cash on Delivery';
       if (_selectedPaymentMethod == 'card') methodDisplay = 'Credit/Debit Card';
       if (_selectedPaymentMethod == 'netbanking') methodDisplay = 'Net Banking';
       if (_selectedPaymentMethod == 'gpay') methodDisplay = 'Google Pay';
@@ -213,9 +208,9 @@ class _PaymentSelectionScreenState extends ConsumerState<PaymentSelectionScreen>
 
                     const SizedBox(height: 24),
 
-                    // Cards, NetBanking & COD
+                    // Cards & NetBanking
                     Text(
-                      'Other Payment Modes',
+                      'Cards & Net Banking',
                       style: AppTypography.labelLarge.copyWith(
                         fontWeight: FontWeight.w800,
                         color: isDark ? AppColors.darkTxt : AppColors.txtPrimary,
@@ -226,8 +221,6 @@ class _PaymentSelectionScreenState extends ConsumerState<PaymentSelectionScreen>
                     _buildPaymentOption('card', AppIcons.payment, 'Credit / Debit Cards', 'Visa, MasterCard, RuPay', isDark),
                     const SizedBox(height: 8),
                     _buildPaymentOption('netbanking', AppIcons.receipt, 'Net Banking', 'All Indian banks supported', isDark),
-                    const SizedBox(height: 8),
-                    _buildPaymentOption('cod', AppIcons.delivery, 'Cash on Delivery (COD)', 'Pay cash at delivery time', isDark),
 
                     const SizedBox(height: 40),
                   ],
@@ -250,10 +243,8 @@ class _PaymentSelectionScreenState extends ConsumerState<PaymentSelectionScreen>
               child: GradientButton(
                 label: paymentState.isProcessing
                     ? 'Processing Payment...'
-                    : (_selectedPaymentMethod == 'cod'
-                        ? 'Place Cash Order  ·  ₹${cartState.finalAmount.toInt()}'
-                        : 'Pay  ·  ₹${cartState.finalAmount.toInt()}'),
-                trailingIcon: _selectedPaymentMethod == 'cod' ? AppIcons.checkCircle : AppIcons.secure,
+                    : 'Pay  ·  ₹${cartState.finalAmount.toInt()}',
+                trailingIcon: AppIcons.secure,
                 isLoading: paymentState.isProcessing,
                 onTap: paymentState.isProcessing ? null : _onPlaceOrder,
               ),
