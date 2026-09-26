@@ -8,8 +8,8 @@ class ApiEndpoints {
   static const String emulatorUrl = 'http://10.0.2.2:4000/api/v1';
   static const String localhostUrl = 'http://localhost:4000/api/v1';
 
-  // Mode switch: Set to true to use instant local offline mock data without needing the Express server
-  static const bool useOfflineMockOnly = true;
+  // Mode switch: Set to false to fetch all live restaurants from the server (with fallback to local if unreachable)
+  static const bool useOfflineMockOnly = false;
 
   // Active base URL for local testing (pointing to your computer on the Wi-Fi network)
   static const String baseUrl = physicalDeviceUrl;

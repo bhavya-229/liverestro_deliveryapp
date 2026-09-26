@@ -70,6 +70,26 @@ final restaurantListProvider = Provider<List<RestaurantModel>>((ref) {
     }
   }
 
+  // If no restaurants match within 15 km (e.g., test device in different city/state without nearby outlets),
+  // fall back to showing all available restaurants with their actual distances so user can still test & order
+  if (listWithDistance.isEmpty && rawList.isNotEmpty) {
+    for (final restro in rawList) {
+      double computedDistanceKm = restro.distanceKm;
+      if (restro.latitude != null && restro.longitude != null) {
+        final restroLatLng = ll.LatLng(restro.latitude!, restro.longitude!);
+        final meters = distanceCalc.as(ll.LengthUnit.Meter, userLatLng, restroLatLng);
+        computedDistanceKm = double.parse((meters / 1000.0).toStringAsFixed(1));
+      }
+      final estimatedMinutes = 15 + (computedDistanceKm * 3.5).round();
+      listWithDistance.add(
+        restro.copyWith(
+          distanceKm: computedDistanceKm,
+          deliveryTimeMinutes: estimatedMinutes,
+        ),
+      );
+    }
+  }
+
   // Sort by nearest distance first
   listWithDistance.sort((a, b) => a.distanceKm.compareTo(b.distanceKm));
 
