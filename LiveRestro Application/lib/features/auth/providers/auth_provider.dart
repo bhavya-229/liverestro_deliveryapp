@@ -2,11 +2,7 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
-<<<<<<< HEAD
 import '../../../core/network/api_client.dart';
-=======
-import 'package:http/http.dart' as http;
->>>>>>> 14d50d1c8d97e63fa9d7ed96cd1638951a0a7423
 import '../models/user_profile.dart';
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
@@ -76,46 +72,19 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(isLoading: false);
   }
 
-  // Use '127.0.0.1' or 'localhost' for Windows/Web.
-  // Use '10.0.2.2' for Android Emulator.
-  // Use your computer's Wi-Fi IP (e.g., '192.168.29.xxx') for a physical phone.
-  static const String _baseUrl = 'http://192.168.29.105:4000/api/v1/auth';
-
   Future<bool> sendOtp(String phoneNumber) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
-    
-    try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl/send-otp'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'phone': phoneNumber}),
-      ).timeout(const Duration(seconds: 10));
-
-      final data = jsonDecode(response.body);
-      if (response.statusCode == 200 && data['success'] == true) {
-        state = state.copyWith(
-          isLoading: false,
-          tempPhoneNumber: phoneNumber,
-        );
-        return true;
-      } else {
-        state = state.copyWith(
-          isLoading: false,
-          errorMessage: data['message'] ?? 'Failed to send OTP',
-        );
-        return false;
-      }
-    } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: 'Network error. Make sure the backend server is running and the IP address is correct.',
-      );
-      return false;
-    }
+    await Future.delayed(const Duration(milliseconds: 600));
+    state = state.copyWith(
+      isLoading: false,
+      tempPhoneNumber: phoneNumber,
+    );
+    return true;
   }
 
   Future<bool> verifyOtp(String otp) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
+    await Future.delayed(const Duration(milliseconds: 700));
     if (otp.length < 4) {
       state = state.copyWith(
         isLoading: false,
@@ -124,7 +93,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
       return false;
     }
 
-<<<<<<< HEAD
     final phone = state.tempPhoneNumber ?? '9876543210';
     
     // Check with Backend MySQL Database
@@ -134,7 +102,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         final fullName = backendCustomer['full_name'] as String?;
         final custId = backendCustomer['id']?.toString() ?? const Uuid().v4();
         
-        // If user already has a saved name in MySQL, restore their full session!
+        // If user already has a saved profile in MySQL, restore session immediately!
         if (fullName != null && fullName.trim().isNotEmpty && fullName != 'Customer') {
           final existingProfile = UserProfile(
             id: custId,
@@ -166,36 +134,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
       isExistingUser: false,
     );
     return true;
-=======
-    try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl/verify-otp'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'phone': state.tempPhoneNumber,
-          'otp': otp,
-        }),
-      ).timeout(const Duration(seconds: 10));
-
-      final data = jsonDecode(response.body);
-      if (response.statusCode == 200 && data['success'] == true) {
-        state = state.copyWith(isLoading: false);
-        return true;
-      } else {
-        state = state.copyWith(
-          isLoading: false,
-          errorMessage: data['message'] ?? 'Invalid OTP code',
-        );
-        return false;
-      }
-    } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: 'Network error. Could not verify OTP.',
-      );
-      return false;
-    }
->>>>>>> 14d50d1c8d97e63fa9d7ed96cd1638951a0a7423
   }
 
   Future<void> completeRegistration({
