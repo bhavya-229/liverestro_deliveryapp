@@ -283,62 +283,81 @@ app.get('/api/v1/restaurants/:id/menu', (req, res) => {
 });
 
 // ---------------------------------------------------------
-// 6. POST /api/v1/orders/create (Persistent MySQL Orders)
+// 6. POST /api/v1/orders/create (Persistent Dedicated `app_orders`)
 // ---------------------------------------------------------
 app.post('/api/v1/orders/create', async (req, res) => {
   try {
     const {
       restro_id,
+      restaurant_name,
       customer_id,
       customer_name,
       customer_phone,
       delivery_address,
+      delivery_landmark,
+      delivery_lat,
+      delivery_lng,
       payment_method,
       items,
+      subtotal,
+      tax_amount,
+      delivery_charge,
+      discount_amount,
       total_amount,
       special_notes,
       delivery_tip
     } = req.body;
 
-    const orderNumber = `LR-POS-${Date.now().toString().slice(-6)}`;
+    const orderNumber = `LR-APP-${Date.now().toString().slice(-6)}`;
     let orderId = nextOrderId++;
 
-    // 1. Insert into MySQL `orders` table
+    // 1. Insert into dedicated MySQL `app_orders` table
     try {
       const [orderRes] = await db.query(
-        `INSERT INTO orders 
-         (outlet_id, customer_id, order_number, customer_name, customer_phone, delivery_address, total, payment_method, payment_status, status, order_type, special_notes, delivery_tip, total_items, metadata)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO app_orders 
+         (order_number, customer_id, restaurant_id, restaurant_name, customer_name, customer_phone, delivery_address, delivery_landmark, delivery_lat, delivery_lng, total_items, subtotal, tax_amount, delivery_charge, delivery_tip, discount_amount, total_amount, payment_method, payment_status, order_status, special_instructions, items_json, driver_name, driver_phone, driver_vehicle, estimated_delivery_minutes)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          restro_id || 55,
-          customer_id || null,
           orderNumber,
+          customer_id || null,
+          restro_id || 55,
+          restaurant_name || 'Restaurant',
           customer_name || 'Customer',
           customer_phone || '9876543210',
           delivery_address || 'Customer Delivery Address',
+          delivery_landmark || null,
+          delivery_lat || null,
+          delivery_lng || null,
+          (items || []).length || 1,
+          subtotal || total_amount || 0.00,
+          tax_amount || 0.00,
+          delivery_charge || 0.00,
+          delivery_tip || 0.00,
+          discount_amount || 0.00,
           total_amount || 0.00,
           payment_method || 'UPI',
           'paid',
-          'open',
-          'delivery',
+          'placed',
           special_notes || '',
-          delivery_tip || 0.00,
-          (items || []).length,
-          JSON.stringify({ items: items || [] })
+          JSON.stringify(items || []),
+          'Suresh Parmar',
+          '+919876543210',
+          'GJ-03-LR-8921',
+          25
         ]
       );
       if (orderRes && orderRes.insertId) {
         orderId = orderRes.insertId;
       }
 
-      // 2. Insert initial lifecycle tracking event into `order_tracking_events`
+      // 2. Insert initial lifecycle tracking event into `app_order_tracking_events`
       await db.query(
-        `INSERT INTO order_tracking_events (order_id, status, title, description)
+        `INSERT INTO app_order_tracking_events (order_id, status, title, description)
          VALUES (?, ?, ?, ?)`,
         [orderId, 'placed', 'Order Placed', 'Your order was successfully placed and notified to the restaurant']
       );
     } catch (dbErr) {
-      console.warn(`[DB Order Insert Warning] Could not persist to MySQL orders: ${dbErr.message}`);
+      console.warn(`[DB Order Insert Warning] Could not persist to app_orders: ${dbErr.message}`);
     }
 
     const newOrder = {
@@ -373,11 +392,11 @@ app.post('/api/v1/orders/create', async (req, res) => {
     // Auto progression for live tracking demo
     startAutoStatusProgression(newOrder.order_number, orderId);
 
-    console.log(`[POS & DB Event] New Order Created & Persisted: ${orderNumber} (ID: ${orderId})`);
+    console.log(`[App Order Event] New Order Created & Persisted in app_orders: ${orderNumber} (ID: ${orderId})`);
 
     res.status(201).json({
       success: true,
-      message: 'Order successfully saved to MySQL database and notified to restaurant',
+      message: 'Order successfully saved to app_orders table and notified to restaurant',
       data: newOrder
     });
   } catch (err) {
@@ -396,25 +415,25 @@ app.get('/api/v1/orders/:order_number/status', async (req, res) => {
     return res.json({ success: true, data: order });
   }
 
-  // Fallback check in MySQL database
+  // Fallback check in MySQL `app_orders` table
   try {
-    const [rows] = await db.query('SELECT * FROM orders WHERE order_number = ? OR order_id = ?', [orderNum, orderNum]);
+    const [rows] = await db.query('SELECT * FROM app_orders WHERE order_number = ? OR id = ?', [orderNum, orderNum]);
     if (rows.length > 0) {
       const row = rows[0];
       return res.json({
         success: true,
         data: {
-          order_id: row.order_id,
+          order_id: row.id,
           order_number: row.order_number,
-          outlet_id: row.outlet_id,
+          outlet_id: row.restaurant_id,
           customer_name: row.customer_name,
           customer_phone: row.customer_phone,
           delivery_address: row.delivery_address,
           payment_method: row.payment_method || 'UPI',
           payment_status: row.payment_status || 'PAID',
-          status: row.status || 'open',
-          stage_index: row.status === 'settled' ? 4 : 1,
-          total_amount: row.total,
+          status: row.order_status || 'placed',
+          stage_index: row.order_status === 'delivered' ? 4 : (row.order_status === 'out_for_delivery' ? 3 : (row.order_status === 'ready' ? 2 : (row.order_status === 'preparing' ? 1 : 0))),
+          total_amount: row.total_amount,
           created_at: row.created_at
         }
       });
@@ -472,21 +491,21 @@ function startAutoStatusProgression(orderNumber, dbOrderId) {
     }
     order.updated_at = new Date().toISOString();
 
-    // Log tracking event in MySQL
+    // Log tracking event in MySQL `app_order_tracking_events` & update `app_orders`
     if (dbOrderId) {
       try {
         await db.query(
-          `INSERT INTO order_tracking_events (order_id, status, title, description) VALUES (?, ?, ?, ?)`,
+          `INSERT INTO app_order_tracking_events (order_id, status, title, description) VALUES (?, ?, ?, ?)`,
           [dbOrderId, statusText, title, desc]
         );
         await db.query(
-          `UPDATE orders SET status = ?, updated_at = NOW() WHERE order_id = ?`,
-          [statusText === 'delivered' ? 'settled' : 'in_progress', dbOrderId]
+          `UPDATE app_orders SET order_status = ?, updated_at = NOW() WHERE id = ?`,
+          [statusText, dbOrderId]
         );
       } catch (err) {}
     }
 
-    console.log(`[Auto POS & DB Progression] ${orderNumber} -> ${order.status}`);
+    console.log(`[Auto App Order Progression] ${orderNumber} -> ${order.status}`);
   }, 10000);
 }
 
