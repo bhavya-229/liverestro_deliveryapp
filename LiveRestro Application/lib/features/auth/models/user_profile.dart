@@ -48,12 +48,14 @@ class UserProfile {
   };
 
   factory UserProfile.fromJson(Map<String, dynamic> json) => UserProfile(
-    id: json['id'] as String,
-    name: json['name'] as String,
-    phoneNumber: json['phoneNumber'] as String,
-    email: json['email'] as String?,
-    isVegOnly: json['isVegOnly'] as bool? ?? false,
-    appliedCouponCode: json['appliedCouponCode'] as String?,
-    createdAt: DateTime.parse(json['createdAt'] as String),
+    id: (json['id'] ?? '').toString(),
+    name: (json['name'] ?? '').toString(),
+    phoneNumber: (json['phoneNumber'] ?? json['mobile_number'] ?? json['phone'] ?? '').toString(),
+    email: json['email']?.toString(),
+    isVegOnly: json['isVegOnly'] == true || json['isVegOnly'] == 1 || json['is_veg_only'] == 1 || json['is_veg_only'] == true,
+    appliedCouponCode: json['appliedCouponCode']?.toString(),
+    createdAt: json['createdAt'] != null
+        ? (DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now())
+        : DateTime.now(),
   );
 }

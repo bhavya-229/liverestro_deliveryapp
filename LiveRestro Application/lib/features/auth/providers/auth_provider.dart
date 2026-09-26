@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
@@ -46,30 +48,44 @@ class AuthState {
 }
 
 class AuthNotifier extends StateNotifier<AuthState> {
-  AuthNotifier() : super(const AuthState()) {
+  final Completer<void> _initCompleter = Completer<void>();
+  Future<void> get initialization => _initCompleter.future;
+
+  AuthNotifier() : super(const AuthState(isLoading: true)) {
     _loadUser();
   }
 
   static const String _userKey = 'live_restro_user_data';
 
   Future<void> _loadUser() async {
-    state = state.copyWith(isLoading: true);
-    final prefs = await SharedPreferences.getInstance();
-    final jsonStr = prefs.getString(_userKey);
-    if (jsonStr != null) {
-      try {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonStr = prefs.getString(_userKey);
+      if (jsonStr != null && jsonStr.isNotEmpty) {
         final data = jsonDecode(jsonStr);
-        final user = UserProfile.fromJson(data);
-        state = state.copyWith(
-          isLoading: false,
-          isAuthenticated: true,
-          user: user,
-          isExistingUser: true,
-        );
-        return;
-      } catch (_) {}
+        if (data is Map<String, dynamic>) {
+          final user = UserProfile.fromJson(data);
+          if (user.name.isNotEmpty) {
+            state = state.copyWith(
+              isLoading: false,
+              isAuthenticated: true,
+              user: user,
+              isExistingUser: true,
+            );
+            if (!_initCompleter.isCompleted) _initCompleter.complete();
+            return;
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('[AuthNotifier] Error reading stored user: $e');
     }
-    state = state.copyWith(isLoading: false);
+    state = state.copyWith(
+      isLoading: false,
+      isAuthenticated: false,
+      user: null,
+    );
+    if (!_initCompleter.isCompleted) _initCompleter.complete();
   }
 
   Future<bool> sendOtp(String phoneNumber) async {

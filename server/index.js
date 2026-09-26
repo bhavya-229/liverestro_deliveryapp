@@ -255,29 +255,40 @@ app.post('/api/v1/customers/auth', async (req, res) => {
 
     let customer = null;
     try {
-      const [existing] = await db.query('SELECT * FROM app_customers WHERE mobile_number = ?', [mobile_number]);
+      const cleanPhone = mobile_number.replace(/^\+91/, '').replace(/\D/g, '');
+      const withPlus91 = `+91${cleanPhone}`;
+
+      const [existing] = await db.query(
+        'SELECT * FROM app_customers WHERE mobile_number = ? OR mobile_number = ? OR mobile_number LIKE ? ORDER BY id DESC',
+        [mobile_number, withPlus91, `%${cleanPhone}`]
+      );
       if (existing.length > 0) {
         customer = existing[0];
-        // Update profile details
-        await db.query(
-          `UPDATE app_customers 
-           SET full_name = COALESCE(?, full_name), 
-               email = COALESCE(?, email), 
-               fcm_token = COALESCE(?, fcm_token), 
-               is_veg_only = COALESCE(?, is_veg_only),
-               updated_at = NOW()
-           WHERE id = ?`,
-          [full_name, email, fcm_token, is_veg_only, customer.id]
-        );
+        // If full_name provided and valid, update it; otherwise preserve existing profile name
+        if (full_name && full_name.trim().length > 0 && full_name !== 'Customer') {
+          await db.query(
+            `UPDATE app_customers 
+             SET full_name = ?, 
+                 email = COALESCE(?, email), 
+                 fcm_token = COALESCE(?, fcm_token), 
+                 is_veg_only = COALESCE(?, is_veg_only),
+                 updated_at = NOW()
+             WHERE id = ?`,
+            [full_name, email, fcm_token, is_veg_only, customer.id]
+          );
+          customer.full_name = full_name;
+          if (email) customer.email = email;
+          if (is_veg_only !== undefined) customer.is_veg_only = is_veg_only;
+        }
       } else {
         const [insertRes] = await db.query(
           `INSERT INTO app_customers (mobile_number, full_name, email, fcm_token, is_veg_only)
            VALUES (?, ?, ?, ?, ?)`,
-          [mobile_number, full_name || 'Customer', email || '', fcm_token || null, is_veg_only || 0]
+          [withPlus91, full_name || 'Customer', email || '', fcm_token || null, is_veg_only || 0]
         );
         customer = {
           id: insertRes.insertId,
-          mobile_number,
+          mobile_number: withPlus91,
           full_name: full_name || 'Customer',
           email: email || '',
           is_veg_only: is_veg_only || 0

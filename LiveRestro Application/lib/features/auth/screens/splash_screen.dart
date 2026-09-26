@@ -44,16 +44,24 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
 
     _controller.forward();
 
-    // Auto navigate after 2.5 seconds
-    Future.delayed(const Duration(milliseconds: 2500), () {
-      if (!mounted) return;
-      final authState = ref.read(authProvider);
-      if (authState.isAuthenticated) {
-        context.go('/home');
-      } else {
-        context.go('/login');
-      }
-    });
+    _checkAuthAndNavigate();
+  }
+
+  Future<void> _checkAuthAndNavigate() async {
+    // Wait for minimum splash animation (1500ms) and auth state restoration concurrently
+    await Future.wait([
+      Future.delayed(const Duration(milliseconds: 1500)),
+      ref.read(authProvider.notifier).initialization,
+    ]);
+
+    if (!mounted) return;
+
+    final authState = ref.read(authProvider);
+    if (authState.isAuthenticated && authState.user != null && authState.user!.name.isNotEmpty) {
+      context.go('/home');
+    } else {
+      context.go('/login');
+    }
   }
 
   @override
@@ -64,6 +72,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
 
   @override
   Widget build(BuildContext context) {
+    // Ensure AuthNotifier is actively watched and loaded immediately
+    ref.watch(authProvider);
+
     return Scaffold(
       body: Stack(
         children: [

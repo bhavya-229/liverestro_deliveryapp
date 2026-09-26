@@ -138,6 +138,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
 
+    // If user is already authenticated with a valid profile, redirect directly to home
+    if (authState.isAuthenticated && authState.user != null && authState.user!.name.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) context.go('/home');
+      });
+    }
+
     return Scaffold(
       backgroundColor: AppColors.bgPage,
       body: Column(
