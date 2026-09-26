@@ -306,6 +306,25 @@ app.post('/api/v1/customers/:id/addresses', async (req, res) => {
 });
 
 // ---------------------------------------------------------
+// 4.1. Customer Order History Persistence (GET)
+// ---------------------------------------------------------
+app.get('/api/v1/customers/:id/orders', async (req, res) => {
+  try {
+    const customerIdentifier = req.params.id; // Can be customer_id OR phone
+    let query = 'SELECT * FROM app_orders WHERE customer_id = ? OR customer_phone = ? ORDER BY id DESC';
+    const [orders] = await db.query(query, [customerIdentifier, customerIdentifier]);
+
+    res.json({
+      success: true,
+      count: orders.length,
+      data: orders
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ---------------------------------------------------------
 // 5. GET /api/v1/restaurants/:id/menu (Categorized Menu)
 // ---------------------------------------------------------
 app.get('/api/v1/restaurants/:id/menu', (req, res) => {

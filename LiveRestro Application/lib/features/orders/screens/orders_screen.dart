@@ -7,6 +7,7 @@ import '../../../core/constants/app_icons.dart';
 import '../../../core/constants/app_typography.dart';
 import '../../../core/widgets/animated_dot.dart';
 import '../../../core/widgets/floating_nav_bar.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../../cart/providers/cart_provider.dart';
 import '../../order_tracking/models/order_model.dart';
 import '../../order_tracking/providers/order_tracking_provider.dart';
@@ -23,6 +24,17 @@ class OrdersScreen extends ConsumerStatefulWidget {
 
 class _OrdersScreenState extends ConsumerState<OrdersScreen> {
   OrderFilterTab _activeTab = OrderFilterTab.all;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final user = ref.read(authProvider).user;
+      if (user != null) {
+        ref.read(orderTrackingProvider.notifier).fetchCustomerOrders(user.id);
+      }
+    });
+  }
 
   void _onNavTap(int index) {
     switch (index) {

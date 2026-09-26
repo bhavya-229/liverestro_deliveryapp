@@ -231,4 +231,24 @@ class ApiClient {
     }
     return null;
   }
+
+  // 6. Fetch Customer's Orders History from Database
+  Future<List<Map<String, dynamic>>> getCustomerOrders(String customerId) async {
+    if (ApiEndpoints.useOfflineMockOnly) return [];
+
+    try {
+      final uri = Uri.parse('$_activeBaseUrl${ApiEndpoints.customerOrders(customerId)}');
+      final response = await http.get(uri).timeout(const Duration(seconds: 4));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success'] == true && data['data'] is List) {
+          return List<Map<String, dynamic>>.from(data['data']);
+        }
+      }
+    } catch (e) {
+      debugPrint('ApiClient.getCustomerOrders failed: $e');
+    }
+    return [];
+  }
 }
