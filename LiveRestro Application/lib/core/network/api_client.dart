@@ -83,19 +83,11 @@ class ApiClient {
         }
       }
     } catch (e) {
-      debugPrint('ApiClient.getRestaurants failed: $e. Falling back to local dataset.');
+      debugPrint('ApiClient.getRestaurants failed: $e');
     }
 
-    // Fallback to local data
-    var list = MockRestaurants.list;
-    if (isVeg == true) list = list.where((r) => r.isPureVeg).toList();
-    if (cuisine != null && cuisine != 'All') {
-      list = list.where((r) => r.cuisines.contains(cuisine)).toList();
-    }
-    if (search != null && search.isNotEmpty) {
-      list = list.where((r) => r.name.toLowerCase().contains(search.toLowerCase())).toList();
-    }
-    return list;
+    // Server offline or unreachable -> Return empty list (no dummy fallback)
+    return [];
   }
 
   // 3. Fetch Restaurant Menu & Categories

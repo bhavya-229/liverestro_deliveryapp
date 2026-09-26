@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart' as ll;
 import '../../../core/network/api_client.dart';
-import '../data/mock_restaurants.dart';
 import '../models/restaurant_model.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../location/providers/location_provider.dart';
@@ -15,18 +14,16 @@ final rawRestaurantsProvider = StateNotifierProvider<RestaurantsNotifier, List<R
 });
 
 class RestaurantsNotifier extends StateNotifier<List<RestaurantModel>> {
-  RestaurantsNotifier() : super(MockRestaurants.list) {
+  RestaurantsNotifier() : super([]) {
     loadRestaurants();
   }
 
   Future<void> loadRestaurants() async {
     try {
       final remoteList = await ApiClient().getRestaurants();
-      if (remoteList.isNotEmpty) {
-        state = remoteList;
-      }
+      state = remoteList;
     } catch (_) {
-      // Keep fallback mock list
+      state = [];
     }
   }
 }
@@ -44,7 +41,7 @@ final restaurantListProvider = Provider<List<RestaurantModel>>((ref) {
 
   var rawList = ref.watch(rawRestaurantsProvider);
 
-  // 1. Calculate real-time distance from user's active address and filter within 15 km
+  // 1. Calculate real-time distance from user's active address and filter strictly within delivery radius (e.g. 15 km)
   final List<RestaurantModel> listWithDistance = [];
 
   for (final restro in rawList) {
@@ -58,28 +55,8 @@ final restaurantListProvider = Provider<List<RestaurantModel>>((ref) {
       computedDistanceKm = double.parse(computedDistanceKm.toStringAsFixed(1));
     }
 
-    // Include if within radius (e.g., 15 km)
+    // Include ONLY if strictly within radius (e.g., 15 km)
     if (computedDistanceKm <= maxRadiusKm) {
-      final estimatedMinutes = 15 + (computedDistanceKm * 3.5).round();
-      listWithDistance.add(
-        restro.copyWith(
-          distanceKm: computedDistanceKm,
-          deliveryTimeMinutes: estimatedMinutes,
-        ),
-      );
-    }
-  }
-
-  // If no restaurants match within 15 km (e.g., test device in different city/state without nearby outlets),
-  // fall back to showing all available restaurants with their actual distances so user can still test & order
-  if (listWithDistance.isEmpty && rawList.isNotEmpty) {
-    for (final restro in rawList) {
-      double computedDistanceKm = restro.distanceKm;
-      if (restro.latitude != null && restro.longitude != null) {
-        final restroLatLng = ll.LatLng(restro.latitude!, restro.longitude!);
-        final meters = distanceCalc.as(ll.LengthUnit.Meter, userLatLng, restroLatLng);
-        computedDistanceKm = double.parse((meters / 1000.0).toStringAsFixed(1));
-      }
       final estimatedMinutes = 15 + (computedDistanceKm * 3.5).round();
       listWithDistance.add(
         restro.copyWith(
@@ -120,43 +97,10 @@ final restaurantDetailProvider = Provider.family<RestaurantModel?, String>((ref,
   final cleanId = restaurantId.replaceAll('rest_', '').toLowerCase();
 
   try {
-    RestaurantModel restro = list.firstWhere(
+    return list.firstWhere(
       (r) => r.id == restaurantId || r.id == cleanId || r.name.toLowerCase().contains(cleanId),
     );
-
-    // If remote list had empty menuItems for any reason, merge from MockRestaurants
-    if (restro.menuItems.isEmpty) {
-      final fallback = MockRestaurants.list.firstWhere(
-        (m) => m.name.toLowerCase().contains(cleanId) || m.id == restaurantId,
-        orElse: () => MockRestaurants.list.first,
-      );
-      restro = RestaurantModel(
-        id: restro.id,
-        name: restro.name,
-        tagline: restro.tagline,
-        rating: restro.rating,
-        ratingCount: restro.ratingCount,
-        deliveryTimeMinutes: restro.deliveryTimeMinutes,
-        distanceKm: restro.distanceKm,
-        priceForTwo: restro.priceForTwo,
-        cuisines: restro.cuisines,
-        imageUrl: restro.imageUrl,
-        coverUrl: restro.coverUrl,
-        isPureVeg: restro.isPureVeg,
-        isPosConnected: restro.isPosConnected,
-        offerTag: restro.offerTag,
-        categories: restro.categories.isNotEmpty ? restro.categories : fallback.categories,
-        menuItems: fallback.menuItems,
-      );
-    }
-    return restro;
   } catch (_) {
-    try {
-      return MockRestaurants.list.firstWhere(
-        (r) => r.id == restaurantId || r.name.toLowerCase().contains(cleanId),
-      );
-    } catch (_) {
-      return null;
-    }
+    return null;
   }
 });
