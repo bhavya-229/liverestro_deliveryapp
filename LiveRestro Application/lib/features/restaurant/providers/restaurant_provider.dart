@@ -1,11 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:latlong2/latlong.dart' as ll;
 import '../../../core/network/api_client.dart';
 import '../data/mock_restaurants.dart';
 import '../models/restaurant_model.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../location/providers/location_provider.dart';
 
 final restaurantSearchQueryProvider = StateProvider<String>((ref) => '');
 final selectedCategoryFilterProvider = StateProvider<String>((ref) => 'All');
+final maxDeliveryRadiusKmProvider = StateProvider<double>((ref) => 15.0);
 
 final rawRestaurantsProvider = StateNotifierProvider<RestaurantsNotifier, List<RestaurantModel>>((ref) {
   return RestaurantsNotifier();
@@ -33,8 +36,44 @@ final restaurantListProvider = Provider<List<RestaurantModel>>((ref) {
   final categoryFilter = ref.watch(selectedCategoryFilterProvider);
   final user = ref.watch(authProvider).user;
   final isVegOnlyUser = user?.isVegOnly ?? false;
+  final activeAddress = ref.watch(locationProvider).activeAddress;
+  final maxRadiusKm = ref.watch(maxDeliveryRadiusKmProvider);
 
-  var list = ref.watch(rawRestaurantsProvider);
+  const distanceCalc = ll.Distance();
+  final userLatLng = ll.LatLng(activeAddress.latitude, activeAddress.longitude);
+
+  var rawList = ref.watch(rawRestaurantsProvider);
+
+  // 1. Calculate real-time distance from user's active address and filter within 15 km
+  final List<RestaurantModel> listWithDistance = [];
+
+  for (final restro in rawList) {
+    double computedDistanceKm = restro.distanceKm;
+
+    if (restro.latitude != null && restro.longitude != null) {
+      final restroLatLng = ll.LatLng(restro.latitude!, restro.longitude!);
+      // distance in meters converted to km
+      final meters = distanceCalc.as(ll.LengthUnit.Meter, userLatLng, restroLatLng);
+      computedDistanceKm = (meters / 1000.0);
+      computedDistanceKm = double.parse(computedDistanceKm.toStringAsFixed(1));
+    }
+
+    // Include if within radius (e.g., 15 km)
+    if (computedDistanceKm <= maxRadiusKm) {
+      final estimatedMinutes = 15 + (computedDistanceKm * 3.5).round();
+      listWithDistance.add(
+        restro.copyWith(
+          distanceKm: computedDistanceKm,
+          deliveryTimeMinutes: estimatedMinutes,
+        ),
+      );
+    }
+  }
+
+  // Sort by nearest distance first
+  listWithDistance.sort((a, b) => a.distanceKm.compareTo(b.distanceKm));
+
+  var list = listWithDistance;
 
   if (isVegOnlyUser) {
     list = list.where((r) => r.isPureVeg).toList();

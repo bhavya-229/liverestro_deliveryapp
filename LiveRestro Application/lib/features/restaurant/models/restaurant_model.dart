@@ -14,6 +14,8 @@ class RestaurantModel {
   final String coverUrl;
   final bool isPureVeg;
   final bool isPosConnected;
+  final double? latitude;
+  final double? longitude;
   final String? offerTag;
   final List<String> categories;
   final List<MenuItemModel> menuItems;
@@ -32,10 +34,54 @@ class RestaurantModel {
     required this.coverUrl,
     required this.isPureVeg,
     this.isPosConnected = true,
+    this.latitude,
+    this.longitude,
     this.offerTag,
     required this.categories,
     required this.menuItems,
   });
+
+  RestaurantModel copyWith({
+    String? id,
+    String? name,
+    String? tagline,
+    double? rating,
+    int? ratingCount,
+    int? deliveryTimeMinutes,
+    double? distanceKm,
+    double? priceForTwo,
+    List<String>? cuisines,
+    String? imageUrl,
+    String? coverUrl,
+    bool? isPureVeg,
+    bool? isPosConnected,
+    double? latitude,
+    double? longitude,
+    String? offerTag,
+    List<String>? categories,
+    List<MenuItemModel>? menuItems,
+  }) {
+    return RestaurantModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      tagline: tagline ?? this.tagline,
+      rating: rating ?? this.rating,
+      ratingCount: ratingCount ?? this.ratingCount,
+      deliveryTimeMinutes: deliveryTimeMinutes ?? this.deliveryTimeMinutes,
+      distanceKm: distanceKm ?? this.distanceKm,
+      priceForTwo: priceForTwo ?? this.priceForTwo,
+      cuisines: cuisines ?? this.cuisines,
+      imageUrl: imageUrl ?? this.imageUrl,
+      coverUrl: coverUrl ?? this.coverUrl,
+      isPureVeg: isPureVeg ?? this.isPureVeg,
+      isPosConnected: isPosConnected ?? this.isPosConnected,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      offerTag: offerTag ?? this.offerTag,
+      categories: categories ?? this.categories,
+      menuItems: menuItems ?? this.menuItems,
+    );
+  }
 
   factory RestaurantModel.fromJson(Map<String, dynamic> json) {
     return RestaurantModel(
@@ -52,6 +98,8 @@ class RestaurantModel {
       coverUrl: json['coverUrl'] ?? 'https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=1200&q=80',
       isPureVeg: (json['is_pure_veg'] == 1 || json['isPureVeg'] == true),
       isPosConnected: (json['is_pos_connected'] == 1 || json['isPosConnected'] == true),
+      latitude: json['latitude'] != null ? (json['latitude'] as num).toDouble() : null,
+      longitude: json['longitude'] != null ? (json['longitude'] as num).toDouble() : null,
       offerTag: json['offerTag'],
       categories: (json['categories'] as List<dynamic>?)?.map((c) => c.toString()).toList() ?? [],
       menuItems: (json['menuItems'] as List<dynamic>?)

@@ -76,8 +76,14 @@ class MenuItemModel {
       price: (json['item_price'] ?? json['price'] ?? 0.0).toDouble(),
       imageUrl: (json['item_image'] != null && json['item_image'].toString().startsWith('http'))
           ? json['item_image']
-          : (json['imageUrl'] ?? 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=400&q=80'),
-      isVeg: json['is_veg'] == 1 || json['isVeg'] == true,
+          : (json['imageUrl'] ?? 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&w=400&q=80'),
+      isVeg: ((json['is_veg'] == 1 || json['is_veg'] == '1' || json['isVeg'] == true) &&
+          !(json['item_name'] ?? json['name'] ?? '').toString().toLowerCase().contains('chicken') &&
+          !(json['item_name'] ?? json['name'] ?? '').toString().toLowerCase().contains('mutton') &&
+          !(json['item_name'] ?? json['name'] ?? '').toString().toLowerCase().contains('fish') &&
+          !(json['item_name'] ?? json['name'] ?? '').toString().toLowerCase().contains('wings') &&
+          !(json['item_name'] ?? json['name'] ?? '').toString().toLowerCase().contains('egg') &&
+          !(json['item_name'] ?? json['name'] ?? '').toString().toLowerCase().contains('meat')),
       isBestseller: json['is_bestseller'] == 1 || json['isBestseller'] == true,
       rating: (json['rating'] ?? 4.5).toDouble(),
       ratingCount: json['rating_count'] ?? json['ratingCount'] ?? 80,

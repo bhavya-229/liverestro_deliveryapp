@@ -1,10 +1,10 @@
 class ApiEndpoints {
   // Local development mock server
-  // On Physical Device (Wi-Fi): use your PC's IP address (192.168.1.10)
+  // On Physical Device (Wi-Fi): use your PC's IP address (192.168.29.246)
   // On Android Emulator: 'http://10.0.2.2:4000/api/v1'
   // On Web / Desktop: 'http://localhost:4000/api/v1'
   // For production: 'https://liverestro.com/api/v1'
-  static const String physicalDeviceUrl = 'http://192.168.1.10:4000/api/v1';
+  static const String physicalDeviceUrl = 'http://192.168.29.246:4000/api/v1';
   static const String emulatorUrl = 'http://10.0.2.2:4000/api/v1';
   static const String localhostUrl = 'http://localhost:4000/api/v1';
 

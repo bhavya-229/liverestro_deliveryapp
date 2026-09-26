@@ -270,19 +270,23 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> wit
                       const SizedBox(height: 8),
                       // Current Location GPS Button
                       GestureDetector(
-                        onTap: () {
-                          const target = ll.LatLng(21.1702, 72.8311);
+                        onTap: () async {
+                          await ref.read(locationProvider.notifier).detectCurrentGPSLocation();
+                          final active = ref.read(locationProvider).activeAddress;
+                          final target = ll.LatLng(active.latitude, active.longitude);
                           _currentMapPosition = target;
                           _mapController.move(target, 16.0);
-                          _addressController.text = 'Shop 4, Chatkara Food Court, Adajan';
-                          _landmarkController.text = 'Near Prime Mall, Surat';
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Current Location: Adajan, Surat'),
-                              backgroundColor: AppColors.flameDark,
-                              duration: Duration(milliseconds: 1500),
-                            ),
-                          );
+                          _addressController.text = active.fullAddress;
+                          _landmarkController.text = active.landmark;
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('GPS Detected: ${active.landmark.isNotEmpty ? active.landmark : active.fullAddress}'),
+                                backgroundColor: AppColors.flameDark,
+                                duration: const Duration(milliseconds: 1500),
+                              ),
+                            );
+                          }
                         },
                         child: Container(
                           width: 42,

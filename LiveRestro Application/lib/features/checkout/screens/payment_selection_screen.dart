@@ -23,27 +23,40 @@ class PaymentSelectionScreen extends ConsumerStatefulWidget {
 }
 
 class _PaymentSelectionScreenState extends ConsumerState<PaymentSelectionScreen> {
-  String _selectedUpi = 'gpay';
+  String _selectedPaymentMethod = 'gpay'; // gpay, phonepe, paytm, other_upi, card, netbanking, cod
 
   void _onPlaceOrder() async {
     final cartState = ref.read(cartProvider);
     final locationState = ref.read(locationProvider);
     final user = ref.read(authProvider).user;
 
-    final success = await ref.read(paymentProvider.notifier).processPayment(
-      amount: cartState.finalAmount,
-    );
+    final isCod = _selectedPaymentMethod == 'cod';
+
+    final success = isCod
+        ? true
+        : await ref.read(paymentProvider.notifier).processPayment(
+            amount: cartState.finalAmount,
+          );
 
     if (!mounted) return;
 
     if (success) {
+      // Map display payment method string
+      String methodDisplay = 'UPI';
+      if (_selectedPaymentMethod == 'cod') methodDisplay = 'Cash on Delivery';
+      if (_selectedPaymentMethod == 'card') methodDisplay = 'Credit/Debit Card';
+      if (_selectedPaymentMethod == 'netbanking') methodDisplay = 'Net Banking';
+      if (_selectedPaymentMethod == 'gpay') methodDisplay = 'Google Pay';
+      if (_selectedPaymentMethod == 'phonepe') methodDisplay = 'PhonePe';
+      if (_selectedPaymentMethod == 'paytm') methodDisplay = 'Paytm';
+
       // Dispatch order to LiveRestro POS API backend
       final remoteOrder = await ApiClient().createOrder(
         restaurantId: cartState.restaurantId ?? '55',
         customerName: user?.name ?? 'Customer',
         customerPhone: user?.phoneNumber ?? '9876543210',
         deliveryAddress: locationState.activeAddress.fullAddress,
-        paymentMethod: _selectedUpi.toUpperCase(),
+        paymentMethod: methodDisplay,
         totalAmount: cartState.finalAmount,
         items: cartState.items.map((i) => {
           'item_id': i.menuItem.id,
@@ -67,7 +80,7 @@ class _PaymentSelectionScreenState extends ConsumerState<PaymentSelectionScreen>
         items: cartState.items,
         billAmount: cartState.finalAmount,
         deliveryAddress: locationState.activeAddress,
-        paymentMethod: _selectedUpi.toUpperCase(),
+        paymentMethod: methodDisplay,
         placedAt: DateTime.now(),
         customerName: user?.name ?? 'Customer',
         customerPhone: user?.phoneNumber ?? '9876543210',
@@ -158,7 +171,7 @@ class _PaymentSelectionScreenState extends ConsumerState<PaymentSelectionScreen>
                             child: Row(
                               children: [
                                 const HugeIcon(
-                                  icon: AppIcons.lock,
+                                  icon: AppIcons.lockKey,
                                   color: AppColors.success,
                                   size: 12,
                                 ),
@@ -190,17 +203,17 @@ class _PaymentSelectionScreenState extends ConsumerState<PaymentSelectionScreen>
                     ),
                     const SizedBox(height: 10),
 
-                    _buildUpiOption('gpay', 'Google Pay', 'Fast & secure UPI transfer', isDark),
+                    _buildPaymentOption('gpay', AppIcons.upi, 'Google Pay', 'Fast & secure UPI transfer', isDark),
                     const SizedBox(height: 8),
-                    _buildUpiOption('phonepe', 'PhonePe', 'Instant bank payment', isDark),
+                    _buildPaymentOption('phonepe', AppIcons.upi, 'PhonePe', 'Instant bank payment', isDark),
                     const SizedBox(height: 8),
-                    _buildUpiOption('paytm', 'Paytm UPI', 'Pay via Paytm handle', isDark),
+                    _buildPaymentOption('paytm', AppIcons.upi, 'Paytm UPI', 'Pay via Paytm handle', isDark),
                     const SizedBox(height: 8),
-                    _buildUpiOption('other_upi', 'Other UPI App / QR', 'Scan or enter any UPI ID', isDark),
+                    _buildPaymentOption('other_upi', AppIcons.upi, 'Other UPI App / QR', 'Scan or enter any UPI ID', isDark),
 
                     const SizedBox(height: 24),
 
-                    // Cards & NetBanking
+                    // Cards, NetBanking & COD
                     Text(
                       'Other Payment Modes',
                       style: AppTypography.labelLarge.copyWith(
@@ -210,11 +223,11 @@ class _PaymentSelectionScreenState extends ConsumerState<PaymentSelectionScreen>
                     ),
                     const SizedBox(height: 10),
 
-                    _buildOtherOption(AppIcons.card, 'Credit / Debit Cards', 'Visa, MasterCard, RuPay', isDark),
+                    _buildPaymentOption('card', AppIcons.payment, 'Credit / Debit Cards', 'Visa, MasterCard, RuPay', isDark),
                     const SizedBox(height: 8),
-                    _buildOtherOption(AppIcons.receipt, 'Net Banking', 'All Indian banks supported', isDark),
+                    _buildPaymentOption('netbanking', AppIcons.receipt, 'Net Banking', 'All Indian banks supported', isDark),
                     const SizedBox(height: 8),
-                    _buildOtherOption(AppIcons.delivery, 'Cash on Delivery (COD)', 'Pay cash at delivery time', isDark),
+                    _buildPaymentOption('cod', AppIcons.delivery, 'Cash on Delivery (COD)', 'Pay cash at delivery time', isDark),
 
                     const SizedBox(height: 40),
                   ],
@@ -237,8 +250,10 @@ class _PaymentSelectionScreenState extends ConsumerState<PaymentSelectionScreen>
               child: GradientButton(
                 label: paymentState.isProcessing
                     ? 'Processing Payment...'
-                    : 'Pay  ·  ₹${cartState.finalAmount.toInt()}',
-                trailingIcon: AppIcons.shieldTick,
+                    : (_selectedPaymentMethod == 'cod'
+                        ? 'Place Cash Order  ·  ₹${cartState.finalAmount.toInt()}'
+                        : 'Pay  ·  ₹${cartState.finalAmount.toInt()}'),
+                trailingIcon: _selectedPaymentMethod == 'cod' ? AppIcons.checkCircle : AppIcons.secure,
                 isLoading: paymentState.isProcessing,
                 onTap: paymentState.isProcessing ? null : _onPlaceOrder,
               ),
@@ -249,11 +264,11 @@ class _PaymentSelectionScreenState extends ConsumerState<PaymentSelectionScreen>
     );
   }
 
-  Widget _buildUpiOption(String value, String title, String subtitle, bool isDark) {
-    final isSelected = _selectedUpi == value;
+  Widget _buildPaymentOption(String value, List<List<dynamic>> icon, String title, String subtitle, bool isDark) {
+    final isSelected = _selectedPaymentMethod == value;
 
     return GestureDetector(
-      onTap: () => setState(() => _selectedUpi = value),
+      onTap: () => setState(() => _selectedPaymentMethod = value),
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
@@ -273,9 +288,9 @@ class _PaymentSelectionScreenState extends ConsumerState<PaymentSelectionScreen>
                 color: isSelected ? AppColors.flame50 : (isDark ? AppColors.darkBg : AppColors.flame50),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Center(
+              child: Center(
                 child: HugeIcon(
-                  icon: AppIcons.lock,
+                  icon: icon,
                   color: AppColors.flame,
                   size: 18,
                 ),
@@ -322,66 +337,6 @@ class _PaymentSelectionScreenState extends ConsumerState<PaymentSelectionScreen>
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildOtherOption(List<List<dynamic>> icon, String title, String subtitle, bool isDark) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkCard : Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isDark ? AppColors.darkBorder : AppColors.flame100,
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.darkBg : AppColors.flame50,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Center(
-              child: HugeIcon(
-                icon: icon,
-                color: AppColors.flame,
-                size: 18,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: AppTypography.labelMedium.copyWith(
-                    color: isDark ? AppColors.darkTxt : AppColors.txtPrimary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                Text(
-                  subtitle,
-                  style: AppTypography.bodySmall.copyWith(
-                    color: AppColors.txtMuted,
-                    fontSize: 11,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const HugeIcon(
-            icon: AppIcons.forward,
-            color: AppColors.txtMuted,
-            size: 16,
-          ),
-        ],
       ),
     );
   }
