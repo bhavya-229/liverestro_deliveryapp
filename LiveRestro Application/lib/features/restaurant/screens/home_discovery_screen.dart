@@ -19,6 +19,8 @@ import '../../../core/widgets/story_viewer.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../cart/providers/cart_provider.dart';
 import '../../location/providers/location_provider.dart';
+import '../../order_tracking/models/order_model.dart';
+import '../../order_tracking/providers/order_tracking_provider.dart';
 import '../providers/restaurant_provider.dart';
 import 'widgets/restaurant_card.dart';
 
@@ -510,6 +512,11 @@ class _HomeDiscoveryScreenState extends ConsumerState<HomeDiscoveryScreen> with 
             FloatingNavBar(
               currentIndex: _navIndex,
               onTap: _onNavTap,
+              hasActiveOrder: ref.watch(orderTrackingProvider).any(
+                    (o) =>
+                        o.status != OrderStatus.delivered &&
+                        o.status != OrderStatus.cancelled,
+                  ),
             ),
           ],
         ),

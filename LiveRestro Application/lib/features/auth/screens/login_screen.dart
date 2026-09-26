@@ -92,11 +92,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
 
     final fullNumber = '${_selectedCountry.dialCode}$phone';
-    await ref.read(authProvider.notifier).sendOtp(fullNumber);
+    final success = await ref.read(authProvider.notifier).sendOtp(fullNumber);
     if (!mounted) return;
-    setState(() => _otpSent = true);
-    _startTimer();
-    _otpFocusNodes[0].requestFocus();
+
+    if (success) {
+      setState(() => _otpSent = true);
+      _startTimer();
+      _otpFocusNodes[0].requestFocus();
+    } else {
+      final error = ref.read(authProvider).errorMessage ?? 'Failed to send OTP';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error), backgroundColor: AppColors.error),
+      );
+    }
   }
 
   void _onVerifyOtp() async {
@@ -363,7 +371,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: AppColors.flame, width: 2),
+                    borderSide: const BorderSide(color: AppColors.accent, width: 2),
                   ),
                 ),
                 onChanged: (val) {

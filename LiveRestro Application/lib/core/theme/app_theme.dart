@@ -9,8 +9,8 @@ class AppTheme {
     useMaterial3: true,
     textTheme: GoogleFonts.plusJakartaSansTextTheme(),
     colorScheme: const ColorScheme.light(
-      primary: AppColors.flame,
-      secondary: AppColors.mango,
+      primary: AppColors.accent, // emerald — drives default Material CTAs
+      secondary: AppColors.flame, // plum now sits as the secondary/structural brand color
       surface: AppColors.bgCard,
       onPrimary: AppColors.txtOnFlame,
       onSurface: AppColors.txtPrimary,
@@ -34,7 +34,7 @@ class AppTheme {
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.flame,
+        backgroundColor: AppColors.accent, // emerald — matches GradientButton
         foregroundColor: AppColors.txtOnFlame,
         minimumSize: const Size(double.infinity, AppSpacing.buttonHeight),
         shape: RoundedRectangleBorder(borderRadius: AppSpacing.buttonRadius),
@@ -56,7 +56,7 @@ class AppTheme {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: AppSpacing.inputRadius,
-        borderSide: const BorderSide(color: AppColors.flame, width: 1.5),
+        borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
       ),
       hintStyle: AppTypography.bodyMedium.copyWith(color: AppColors.txtMuted),
     ),
@@ -75,8 +75,8 @@ class AppTheme {
       scaffoldBackgroundColor: AppColors.darkBg,
       textTheme: GoogleFonts.plusJakartaSansTextTheme(ThemeData.dark().textTheme),
       colorScheme: const ColorScheme.dark(
-        primary: AppColors.flame,
-        secondary: AppColors.mango,
+        primary: AppColors.accent, // emerald
+        secondary: AppColors.flame,
         surface: AppColors.darkCard,
         onPrimary: AppColors.txtOnFlame,
         onSurface: AppColors.darkTxt,
@@ -111,7 +111,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: AppSpacing.inputRadius,
-          borderSide: const BorderSide(color: AppColors.flame, width: 1.5),
+          borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
         ),
         hintStyle: AppTypography.bodyMedium.copyWith(color: AppColors.txtMuted),
       ),

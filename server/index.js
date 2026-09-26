@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const db = require('./db');
+const twilio = require('twilio');
 let { restaurants: mockRestaurants, menuCategories: mockCategories, menuItems: mockItems, liveOrders, nextOrderId } = require('./data');
 
 const app = express();
@@ -10,7 +11,11 @@ const PORT = process.env.PORT || 4000;
 app.use(cors());
 app.use(express.json());
 
-// ---------------------------------------------------------
+// Twilio Setup
+const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+
+// OTP Storage (In-memory for testing, use Redis/DB in production)
+const otpStore = new Map();
 // Helper: Enrich restaurant with mapped menu items and categories
 // ---------------------------------------------------------
 function getEnrichedRestaurant(r, categories = mockCategories, items = mockItems) {
@@ -51,6 +56,59 @@ app.get('/api/v1/health', async (req, res) => {
 });
 
 // ---------------------------------------------------------
+// --- OTP Auth Endpoints ---
+// ---------------------------------------------------------
+app.post('/api/v1/auth/send-otp', async (req, res) => {
+  const { phone } = req.body;
+  if (!phone) {
+    return res.status(400).json({ success: false, message: 'Phone number is required' });
+  }
+
+  // Generate 6-digit OTP
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  
+  // Store OTP with expiration (5 mins)
+  otpStore.set(phone, { otp, expiresAt: Date.now() + 5 * 60 * 1000 });
+
+  try {
+    await twilioClient.messages.create({
+      body: `Your LiveRestro login OTP is ${otp}. It is valid for 5 minutes.`,
+      from: process.env.TWILIO_PHONE_NUMBER,
+      to: phone // Should be in E.164 format (e.g. +919876543210)
+    });
+    console.log(`[OTP Sent] Sent ${otp} to ${phone}`);
+    res.json({ success: true, message: 'OTP sent successfully' });
+  } catch (error) {
+    console.error('[Twilio Error]', error);
+    res.status(500).json({ success: false, message: 'Failed to send OTP via SMS', error: error.message });
+  }
+});
+
+app.post('/api/v1/auth/verify-otp', (req, res) => {
+  const { phone, otp } = req.body;
+  if (!phone || !otp) {
+    return res.status(400).json({ success: false, message: 'Phone and OTP are required' });
+  }
+
+  const storedData = otpStore.get(phone);
+  if (!storedData) {
+    return res.status(400).json({ success: false, message: 'OTP not requested or expired' });
+  }
+
+  if (Date.now() > storedData.expiresAt) {
+    otpStore.delete(phone);
+    return res.status(400).json({ success: false, message: 'OTP has expired' });
+  }
+
+  if (storedData.otp === otp) {
+    // Valid OTP
+    otpStore.delete(phone);
+    const token = 'sample-jwt-token-xyz'; // In real app, generate actual JWT
+    res.json({ success: true, message: 'OTP verified successfully', token });
+  } else {
+    res.status(400).json({ success: false, message: 'Invalid OTP code' });
+  }
+});
 // 2. GET /api/v1/restaurants (Nearby Outlets Discovery)
 // ---------------------------------------------------------
 app.get('/api/v1/restaurants', async (req, res) => {

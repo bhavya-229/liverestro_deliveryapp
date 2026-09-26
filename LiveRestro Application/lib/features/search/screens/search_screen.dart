@@ -6,6 +6,8 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_icons.dart';
 import '../../../core/constants/app_typography.dart';
 import '../../../core/widgets/floating_nav_bar.dart';
+import '../../order_tracking/models/order_model.dart';
+import '../../order_tracking/providers/order_tracking_provider.dart';
 import '../../restaurant/data/mock_restaurants.dart';
 import '../models/search_result.dart';
 import '../widgets/search_result_item.dart';
@@ -332,6 +334,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             FloatingNavBar(
               currentIndex: 1,
               onTap: _onNavTap,
+              hasActiveOrder: ref.watch(orderTrackingProvider).any(
+                    (o) =>
+                        o.status != OrderStatus.delivered &&
+                        o.status != OrderStatus.cancelled,
+                  ),
             ),
           ],
         ),

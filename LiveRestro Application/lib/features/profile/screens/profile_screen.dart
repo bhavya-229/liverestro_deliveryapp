@@ -10,6 +10,7 @@ import '../../../core/theme/theme_provider.dart';
 import '../../../core/widgets/floating_nav_bar.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../location/providers/location_provider.dart';
+import '../../order_tracking/models/order_model.dart';
 import '../../order_tracking/providers/order_tracking_provider.dart';
 import '../widgets/profile_row.dart';
 
@@ -534,6 +535,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             FloatingNavBar(
               currentIndex: 3,
               onTap: _onNavTap,
+              hasActiveOrder: ref.watch(orderTrackingProvider).any(
+                    (o) =>
+                        o.status != OrderStatus.delivered &&
+                        o.status != OrderStatus.cancelled,
+                  ),
             ),
           ],
         ),

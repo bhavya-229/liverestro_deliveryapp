@@ -30,19 +30,19 @@ class _OfferBannerCardState extends State<OfferBannerCard> {
     switch (widget.variant) {
       case OfferBannerVariant.flame:
         return const LinearGradient(
-          colors: [Color(0xFFCC2D00), Color(0xFFFF4500)],
+          colors: [Color(0xFF0A5C4C), Color(0xFF0E7C66)],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         );
       case OfferBannerVariant.green:
         return const LinearGradient(
-          colors: [Color(0xFF13361A), Color(0xFF16A34A)],
+          colors: [Color(0xFF1A3A1A), Color(0xFF16A34A)],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         );
       case OfferBannerVariant.red:
         return const LinearGradient(
-          colors: [Color(0xFF381212), Color(0xFFDC2626)],
+          colors: [Color(0xFF3A1A1A), Color(0xFFDC2626)],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         );
