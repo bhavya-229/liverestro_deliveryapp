@@ -30,9 +30,7 @@ class HomeDiscoveryScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeDiscoveryScreenState extends ConsumerState<HomeDiscoveryScreen> {
-  int _navIndex = 0;
-  final TextEditingController _searchController = TextEditingController();
-  final FocusNode _searchFocusNode = FocusNode();
+  final int _navIndex = 0;
 
   final List<String> _cuisines = const [
     'All',
@@ -43,13 +41,6 @@ class _HomeDiscoveryScreenState extends ConsumerState<HomeDiscoveryScreen> {
     'Pizzas',
     'South Indian',
   ];
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    _searchFocusNode.dispose();
-    super.dispose();
-  }
 
   void _openStory(int initialIndex) {
     final stories = [
@@ -92,26 +83,18 @@ class _HomeDiscoveryScreenState extends ConsumerState<HomeDiscoveryScreen> {
   }
 
   void _onNavTap(int index) {
-    setState(() => _navIndex = index);
     switch (index) {
       case 0:
         // Already on Home
         break;
       case 1:
-        // Focus search
-        _searchFocusNode.requestFocus();
+        context.push('/search');
         break;
       case 2:
-        // Orders / Cart / Tracking
-        final cart = ref.read(cartProvider);
-        if (cart.items.isNotEmpty) {
-          context.push('/cart');
-        } else {
-          context.push('/profile');
-        }
+        context.go('/orders');
         break;
       case 3:
-        context.push('/profile');
+        context.go('/profile');
         break;
     }
   }
@@ -247,42 +230,37 @@ class _HomeDiscoveryScreenState extends ConsumerState<HomeDiscoveryScreen> {
                   ),
                 ),
 
-                // SEARCH BAR
+                // SEARCH BAR (Tap target to /search)
                 SliverToBoxAdapter(
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: isDark ? AppColors.darkCard : Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isDark ? AppColors.darkBorder : AppColors.flame100,
-                        width: 1.5,
+                  child: GestureDetector(
+                    onTap: () => context.push('/search'),
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: isDark ? AppColors.darkCard : Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isDark ? AppColors.darkBorder : AppColors.flame100,
+                          width: 1.5,
+                        ),
                       ),
-                    ),
-                    child: TextField(
-                      controller: _searchController,
-                      focusNode: _searchFocusNode,
-                      onChanged: (val) {
-                        ref.read(restaurantSearchQueryProvider.notifier).state = val;
-                      },
-                      style: AppTypography.bodyMedium.copyWith(
-                        color: isDark ? AppColors.darkTxt : AppColors.txtPrimary,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: 'Search restaurants, dishes, cuisines…',
-                        prefixIcon: const Padding(
-                          padding: EdgeInsets.all(12),
-                          child: HugeIcon(
+                      child: Row(
+                        children: [
+                          const HugeIcon(
                             icon: AppIcons.search,
                             color: AppColors.txtMuted,
                             size: 18,
                           ),
-                        ),
-                        border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        fillColor: Colors.transparent,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          const SizedBox(width: 10),
+                          Text(
+                            'Search restaurants, dishes, cuisines…',
+                            style: AppTypography.bodySmall.copyWith(
+                              color: AppColors.txtMuted,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),

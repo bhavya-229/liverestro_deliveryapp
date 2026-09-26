@@ -19,6 +19,18 @@ class ApiClient {
     bool? isVeg,
     String? cuisine,
   }) async {
+    if (ApiEndpoints.useOfflineMockOnly) {
+      var list = MockRestaurants.list;
+      if (isVeg == true) list = list.where((r) => r.isPureVeg).toList();
+      if (cuisine != null && cuisine != 'All') {
+        list = list.where((r) => r.cuisines.contains(cuisine)).toList();
+      }
+      if (search != null && search.isNotEmpty) {
+        list = list.where((r) => r.name.toLowerCase().contains(search.toLowerCase())).toList();
+      }
+      return list;
+    }
+
     try {
       final queryParams = <String, String>{};
       if (search != null && search.isNotEmpty) queryParams['search'] = search;
@@ -52,6 +64,14 @@ class ApiClient {
 
   // 2. Fetch Restaurant Menu & Categories
   Future<List<MenuItemModel>> getRestaurantMenu(String restaurantId) async {
+    if (ApiEndpoints.useOfflineMockOnly) {
+      final restro = MockRestaurants.list.firstWhere(
+        (r) => r.id == restaurantId,
+        orElse: () => MockRestaurants.list.first,
+      );
+      return restro.menuItems;
+    }
+
     try {
       final uri = Uri.parse('$_activeBaseUrl${ApiEndpoints.restaurantMenu(restaurantId)}');
       final response = await http.get(uri).timeout(const Duration(seconds: 3));
@@ -96,6 +116,14 @@ class ApiClient {
     String? specialNotes,
     double? deliveryTip,
   }) async {
+    if (ApiEndpoints.useOfflineMockOnly) {
+      return {
+        'order_number': 'LR-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}',
+        'status': 'placed',
+        'eta_minutes': 35,
+      };
+    }
+
     try {
       final uri = Uri.parse('$_activeBaseUrl${ApiEndpoints.createOrder}');
       final payload = {
@@ -130,6 +158,10 @@ class ApiClient {
 
   // 4. Get Live POS Order Status
   Future<Map<String, dynamic>?> getOrderStatus(String orderNumber) async {
+    if (ApiEndpoints.useOfflineMockOnly) {
+      return null;
+    }
+
     try {
       final uri = Uri.parse('$_activeBaseUrl${ApiEndpoints.orderStatus(orderNumber)}');
       final response = await http.get(uri).timeout(const Duration(seconds: 3));

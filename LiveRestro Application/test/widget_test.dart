@@ -5,6 +5,9 @@ import 'package:liverestro/features/cart/models/cart_item_model.dart';
 import 'package:liverestro/features/cart/providers/cart_provider.dart';
 import 'package:liverestro/features/restaurant/data/mock_restaurants.dart';
 import 'package:liverestro/features/restaurant/screens/home_discovery_screen.dart';
+import 'package:liverestro/features/orders/screens/orders_screen.dart';
+import 'package:liverestro/features/profile/screens/profile_screen.dart';
+import 'package:liverestro/features/search/screens/search_screen.dart';
 
 void main() {
   group('LiveRestro Cart & Promo Business Logic Tests', () {
@@ -57,7 +60,7 @@ void main() {
   });
 
   group('LiveRestro UI Widget Tests', () {
-    testWidgets('Renders HomeDiscoveryScreen with search and categories', (WidgetTester tester) async {
+    testWidgets('Renders HomeDiscoveryScreen with search shortcut and categories', (WidgetTester tester) async {
       await tester.pumpWidget(
         const ProviderScope(
           child: MaterialApp(
@@ -67,9 +70,55 @@ void main() {
       );
 
       expect(find.byType(HomeDiscoveryScreen), findsOneWidget);
-      expect(find.byType(TextField), findsOneWidget);
+      expect(find.text('Search restaurants, dishes, cuisines…'), findsOneWidget);
       expect(find.text('Burgers'), findsWidgets);
       expect(find.text('Chatkara'), findsWidgets);
+    });
+
+    testWidgets('Renders SearchScreen with active search TextField and categories', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            home: SearchScreen(),
+          ),
+        ),
+      );
+
+      expect(find.byType(SearchScreen), findsOneWidget);
+      expect(find.byType(TextField), findsOneWidget);
+      expect(find.text('Recent searches'), findsOneWidget);
+      expect(find.text('Browse by category'), findsOneWidget);
+    });
+
+    testWidgets('Renders OrdersScreen with filter tabs', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            home: OrdersScreen(),
+          ),
+        ),
+      );
+
+      expect(find.byType(OrdersScreen), findsOneWidget);
+      expect(find.text('Your Orders'), findsOneWidget);
+      expect(find.text('All orders'), findsOneWidget);
+      expect(find.text('Delivered'), findsWidgets);
+    });
+
+    testWidgets('Renders ProfileScreen with user details and stats', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            home: ProfileScreen(),
+          ),
+        ),
+      );
+
+      expect(find.byType(ProfileScreen), findsOneWidget);
+      expect(find.text('Orders'), findsWidgets);
+      expect(find.text('Spent'), findsOneWidget);
+      expect(find.text('Addresses'), findsOneWidget);
+      expect(find.text('PREFERENCES'), findsOneWidget);
     });
   });
 }

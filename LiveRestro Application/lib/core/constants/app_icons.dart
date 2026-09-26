@@ -25,9 +25,11 @@ class AppIcons {
 
   // === PAYMENT ===
   static const payment = HugeIcons.strokeRoundedCreditCard;
+  static const card = HugeIcons.strokeRoundedCreditCard;
   static const upi = HugeIcons.strokeRoundedPayment01;
   static const cash = HugeIcons.strokeRoundedMoney01;
   static const secure = HugeIcons.strokeRoundedSecurityCheck;
+  static const shieldTick = HugeIcons.strokeRoundedSecurityCheck;
   static const wallet = HugeIcons.strokeRoundedWallet01;
 
   // === TRACKING ===
@@ -74,5 +76,16 @@ class AppIcons {
   static const noteEdit = HugeIcons.strokeRoundedNote01;
   static const receipt = HugeIcons.strokeRoundedInvoice01;
   static const favourite = HugeIcons.strokeRoundedFavourite;
+  static const lock = HugeIcons.strokeRoundedSquareLock01;
   static const lockKey = HugeIcons.strokeRoundedSquareLock01;
+  static const searchMinus = HugeIcons.strokeRoundedSearchMinus;
+  static const category = HugeIcons.strokeRoundedGridView;
+  static const trending = HugeIcons.strokeRoundedFire;
+  static const store = HugeIcons.strokeRoundedStore01;
+  static const meat = HugeIcons.strokeRoundedSteak;
+  static const coffee = HugeIcons.strokeRoundedCoffee01;
+  static const radio = HugeIcons.strokeRoundedRadio;
+  static const support = HugeIcons.strokeRoundedCustomerSupport;
+  static const document = HugeIcons.strokeRoundedFile01;
+  static const info = HugeIcons.strokeRoundedInformationCircle;
 }

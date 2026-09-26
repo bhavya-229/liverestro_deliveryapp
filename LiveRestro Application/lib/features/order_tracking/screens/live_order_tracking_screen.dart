@@ -402,6 +402,8 @@ class LiveOrderTrackingScreen extends ConsumerWidget {
         return 'Rider on the way to your door';
       case OrderStatus.delivered:
         return 'Delivered! Enjoy your meal';
+      case OrderStatus.cancelled:
+        return 'Order cancelled & refunded';
     }
   }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/constants/app_assets.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_typography.dart';
@@ -83,7 +84,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
                 ScaleTransition(
                   scale: _logoScale,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.16),
                       borderRadius: BorderRadius.circular(24),
@@ -99,10 +100,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
                         ),
                       ],
                     ),
-                    child: Image.asset(
-                      'assets/images/logo_white.png',
-                      width: 230,
-                      fit: BoxFit.contain,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(14),
+                      child: Image.asset(
+                        AppAssets.currentLogo,
+                        width: 240,
+                        fit: BoxFit.contain,
+                      ),
                     ),
                   ),
                 ),

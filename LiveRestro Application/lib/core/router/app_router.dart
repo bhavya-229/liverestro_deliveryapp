@@ -6,9 +6,11 @@ import '../../features/cart/screens/cart_screen.dart';
 import '../../features/checkout/screens/payment_selection_screen.dart';
 import '../../features/location/screens/location_picker_screen.dart';
 import '../../features/order_tracking/screens/live_order_tracking_screen.dart';
+import '../../features/orders/screens/orders_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/restaurant/screens/home_discovery_screen.dart';
 import '../../features/restaurant/screens/restaurant_detail_screen.dart';
+import '../../features/search/screens/search_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/splash',
@@ -32,6 +34,14 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/home',
       builder: (context, state) => const HomeDiscoveryScreen(),
+    ),
+    GoRoute(
+      path: '/search',
+      builder: (context, state) => const SearchScreen(),
+    ),
+    GoRoute(
+      path: '/orders',
+      builder: (context, state) => const OrdersScreen(),
     ),
     GoRoute(
       path: '/restaurant/:id',

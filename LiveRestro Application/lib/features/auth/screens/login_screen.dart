@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
+import '../../../core/constants/app_assets.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_icons.dart';
 import '../../../core/constants/app_spacing.dart';
@@ -27,22 +28,13 @@ class CountryInfo {
   });
 }
 
-const List<CountryInfo> kSupportedCountries = [
-  CountryInfo(name: 'India', flag: '🇮🇳', dialCode: '+91', phoneLength: 10, hint: '98765 43210'),
-  CountryInfo(name: 'United States', flag: '🇺🇸', dialCode: '+1', phoneLength: 10, hint: '(555) 012-3456'),
-  CountryInfo(name: 'United Kingdom', flag: '🇬🇧', dialCode: '+44', phoneLength: 10, hint: '7911 123456'),
-  CountryInfo(name: 'United Arab Emirates', flag: '🇦🇪', dialCode: '+971', phoneLength: 9, hint: '50 123 4567'),
-  CountryInfo(name: 'Canada', flag: '🇨🇦', dialCode: '+1', phoneLength: 10, hint: '(416) 123-4567'),
-  CountryInfo(name: 'Australia', flag: '🇦🇺', dialCode: '+61', phoneLength: 9, hint: '412 345 678'),
-  CountryInfo(name: 'Singapore', flag: '🇸🇬', dialCode: '+65', phoneLength: 8, hint: '8123 4567'),
-  CountryInfo(name: 'Saudi Arabia', flag: '🇸🇦', dialCode: '+966', phoneLength: 9, hint: '50 123 4567'),
-  CountryInfo(name: 'Germany', flag: '🇩🇪', dialCode: '+49', phoneLength: 10, hint: '151 12345678'),
-  CountryInfo(name: 'France', flag: '🇫🇷', dialCode: '+33', phoneLength: 9, hint: '6 12 34 56 78'),
-  CountryInfo(name: 'Qatar', flag: '🇶🇦', dialCode: '+974', phoneLength: 8, hint: '3312 3456'),
-  CountryInfo(name: 'Kuwait', flag: '🇰🇼', dialCode: '+965', phoneLength: 8, hint: '5123 4567'),
-  CountryInfo(name: 'Oman', flag: '🇴🇲', dialCode: '+968', phoneLength: 8, hint: '9123 4567'),
-  CountryInfo(name: 'Bahrain', flag: '🇧🇭', dialCode: '+973', phoneLength: 8, hint: '3612 3456'),
-];
+const CountryInfo kIndiaInfo = CountryInfo(
+  name: 'India',
+  flag: '🇮🇳',
+  dialCode: '+91',
+  phoneLength: 10,
+  hint: '98765 43210',
+);
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -52,7 +44,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  CountryInfo _selectedCountry = kSupportedCountries[0];
+  final CountryInfo _selectedCountry = kIndiaInfo;
   final TextEditingController _phoneController = TextEditingController();
   final List<TextEditingController> _otpControllers = List.generate(6, (_) => TextEditingController());
   final List<FocusNode> _otpFocusNodes = List.generate(6, (_) => FocusNode());
@@ -89,10 +81,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   void _onGetOtp() async {
     final phone = _phoneController.text.trim();
-    if (phone.length != _selectedCountry.phoneLength) {
+    if (phone.length != _selectedCountry.phoneLength || !phone.startsWith(RegExp(r'[6-9]'))) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Please enter a valid ${_selectedCountry.phoneLength}-digit mobile number for ${_selectedCountry.name}'),
+          content: Text('Please enter a valid ${_selectedCountry.phoneLength}-digit mobile number'),
           backgroundColor: AppColors.error,
         ),
       );
@@ -157,10 +149,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Image.asset(
-                  'assets/images/logo_white.png',
-                  height: 38,
-                  fit: BoxFit.contain,
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.16),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.35),
+                      width: 1.2,
+                    ),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.asset(
+                      AppAssets.currentLogo,
+                      height: 38,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 12),
                 Text(
@@ -228,28 +234,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           clipBehavior: Clip.antiAlias,
           child: Row(
             children: [
-              InkWell(
-                onTap: _showCountryPicker,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  color: AppColors.flame50,
-                  height: double.infinity,
-                  child: Row(
-                    children: [
-                      Text(_selectedCountry.flag, style: const TextStyle(fontSize: 18)),
-                      const SizedBox(width: 4),
-                      Text(
-                        _selectedCountry.dialCode,
-                        style: AppTypography.labelMedium.copyWith(
-                          color: AppColors.flame,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 13,
-                        ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                color: AppColors.flame50,
+                height: double.infinity,
+                child: Row(
+                  children: [
+                    Text(_selectedCountry.flag, style: const TextStyle(fontSize: 18)),
+                    const SizedBox(width: 4),
+                    Text(
+                      _selectedCountry.dialCode,
+                      style: AppTypography.labelMedium.copyWith(
+                        color: AppColors.flame,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 13,
                       ),
-                      const SizedBox(width: 2),
-                      const Icon(Icons.arrow_drop_down_rounded, color: AppColors.flame, size: 20),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
               Container(width: 1, color: AppColors.flame100),
@@ -465,196 +466,4 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  void _showCountryPicker() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        return _CountryPickerSheet(
-          selectedCountry: _selectedCountry,
-          onSelect: (country) {
-            setState(() {
-              _selectedCountry = country;
-              _phoneController.clear();
-            });
-            Navigator.of(ctx).pop();
-          },
-        );
-      },
-    );
-  }
-}
-
-class _CountryPickerSheet extends StatefulWidget {
-  final CountryInfo selectedCountry;
-  final ValueChanged<CountryInfo> onSelect;
-
-  const _CountryPickerSheet({
-    required this.selectedCountry,
-    required this.onSelect,
-  });
-
-  @override
-  State<_CountryPickerSheet> createState() => _CountryPickerSheetState();
-}
-
-class _CountryPickerSheetState extends State<_CountryPickerSheet> {
-  final TextEditingController _searchController = TextEditingController();
-  List<CountryInfo> _filteredCountries = kSupportedCountries;
-
-  @override
-  void initState() {
-    super.initState();
-    _searchController.addListener(_onSearchChanged);
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  void _onSearchChanged() {
-    final query = _searchController.text.toLowerCase().trim();
-    setState(() {
-      if (query.isEmpty) {
-        _filteredCountries = kSupportedCountries;
-      } else {
-        _filteredCountries = kSupportedCountries.where((c) {
-          return c.name.toLowerCase().contains(query) ||
-              c.dialCode.contains(query);
-        }).toList();
-      }
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.70,
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkCard : Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: Column(
-        children: [
-          // Drag handle
-          Center(
-            child: Container(
-              margin: const EdgeInsets.symmetric(vertical: 12),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.flame100,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                Text(
-                  'Select Country',
-                  style: AppTypography.headlineMedium.copyWith(
-                    color: isDark ? AppColors.darkTxt : AppColors.txtPrimary,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const Spacer(),
-                IconButton(
-                  icon: const Icon(Icons.close, size: 20),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-            child: Container(
-              height: 44,
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.darkBg : AppColors.flame50,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppColors.flame100),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Row(
-                children: [
-                  const Icon(Icons.search, size: 20, color: AppColors.flame),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: TextField(
-                      controller: _searchController,
-                      decoration: const InputDecoration(
-                        hintText: 'Search country or code...',
-                        border: InputBorder.none,
-                        isDense: true,
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                      style: AppTypography.bodyMedium,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const Divider(height: 1, color: AppColors.flame50),
-          Expanded(
-            child: ListView.separated(
-              itemCount: _filteredCountries.length,
-              separatorBuilder: (context, index) => Divider(
-                height: 1,
-                color: isDark ? AppColors.darkBorder : AppColors.flame50,
-              ),
-              itemBuilder: (context, index) {
-                final country = _filteredCountries[index];
-                final isSelected = country.dialCode == widget.selectedCountry.dialCode &&
-                    country.name == widget.selectedCountry.name;
-
-                return ListTile(
-                  onTap: () => widget.onSelect(country),
-                  leading: Text(
-                    country.flag,
-                    style: const TextStyle(fontSize: 24),
-                  ),
-                  title: Text(
-                    country.name,
-                    style: AppTypography.labelMedium.copyWith(
-                      color: isDark ? AppColors.darkTxt : AppColors.txtPrimary,
-                      fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
-                    ),
-                  ),
-                  subtitle: Text(
-                    '${country.phoneLength} digits (e.g. ${country.hint})',
-                    style: AppTypography.bodySmall.copyWith(fontSize: 11),
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        country.dialCode,
-                        style: AppTypography.labelLarge.copyWith(
-                          color: AppColors.flame,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      if (isSelected) ...[
-                        const SizedBox(width: 8),
-                        const Icon(Icons.check_circle, color: AppColors.flame, size: 18),
-                      ],
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }

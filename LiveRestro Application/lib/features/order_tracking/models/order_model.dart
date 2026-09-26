@@ -7,6 +7,7 @@ enum OrderStatus {
   ready,
   outForDelivery,
   delivered,
+  cancelled,
 }
 
 class OrderModel {
@@ -25,6 +26,7 @@ class OrderModel {
   final String? riderPhone;
   final String? riderVehicleNumber;
   final int etaMinutes;
+  final double? refundAmount;
 
   const OrderModel({
     required this.orderId,
@@ -42,6 +44,7 @@ class OrderModel {
     this.riderPhone = '+91 98251 09876',
     this.riderVehicleNumber = 'GJ 03 EK 4492',
     this.etaMinutes = 25,
+    this.refundAmount,
   });
 
   OrderModel copyWith({
@@ -60,6 +63,7 @@ class OrderModel {
     String? riderPhone,
     String? riderVehicleNumber,
     int? etaMinutes,
+    double? refundAmount,
   }) {
     return OrderModel(
       orderId: orderId ?? this.orderId,
@@ -77,6 +81,7 @@ class OrderModel {
       riderPhone: riderPhone ?? this.riderPhone,
       riderVehicleNumber: riderVehicleNumber ?? this.riderVehicleNumber,
       etaMinutes: etaMinutes ?? this.etaMinutes,
+      refundAmount: refundAmount ?? this.refundAmount,
     );
   }
 }
