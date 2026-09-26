@@ -1,9 +1,7 @@
 -- ========================================================================
 -- LIVERESTRO DELIVERY APP - CUSTOMER & REAL-TIME ORDER TRACKING MIGRATION
--- Run this SQL script in your MySQL Database (e.g., via phpMyAdmin or MySQL CLI)
+-- Compatible with MySQL 5.7+, MySQL 8.0+, MariaDB, phpMyAdmin
 -- ========================================================================
-
-USE `liverestro`;
 
 -- 1. Create App Customers Table (Customer Accounts, Profile, Veg Preference, FCM Tokens)
 CREATE TABLE IF NOT EXISTS `app_customers` (
@@ -43,99 +41,71 @@ CREATE TABLE IF NOT EXISTS `app_customer_addresses` (
 
 
 -- 3. Enhance Existing `orders` Table with Customer & Online Payment Columns
--- (Checks column existence safely before adding)
-SET @dbname = DATABASE();
-SET @tablename = "orders";
+-- Add customer_id (safe procedure)
+DROP PROCEDURE IF EXISTS `AddDeliveryColumnsToOrders`;
+DELIMITER $$
+CREATE PROCEDURE `AddDeliveryColumnsToOrders`()
+BEGIN
+  -- customer_id
+  IF NOT EXISTS (
+    SELECT * FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'orders' AND COLUMN_NAME = 'customer_id'
+  ) THEN
+    ALTER TABLE `orders` ADD COLUMN `customer_id` INT(11) NULL;
+  END IF;
 
--- Add customer_id
-SET @preparedStatement = (SELECT IF(
-  (
-    SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = @dbname
-      AND TABLE_NAME = @tablename
-      AND COLUMN_NAME = "customer_id"
-  ) > 0,
-  "SELECT 1",
-  "ALTER TABLE `orders` ADD COLUMN `customer_id` INT(11) NULL AFTER `outlet_id`"
-));
-PREPARE stmt FROM @preparedStatement;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
+  -- payment_method
+  IF NOT EXISTS (
+    SELECT * FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'orders' AND COLUMN_NAME = 'payment_method'
+  ) THEN
+    ALTER TABLE `orders` ADD COLUMN `payment_method` VARCHAR(50) NOT NULL DEFAULT 'UPI';
+  END IF;
 
--- Add payment_method
-SET @preparedStatement = (SELECT IF(
-  (
-    SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = @dbname
-      AND TABLE_NAME = @tablename
-      AND COLUMN_NAME = "payment_method"
-  ) > 0,
-  "SELECT 1",
-  "ALTER TABLE `orders` ADD COLUMN `payment_method` VARCHAR(50) NOT NULL DEFAULT 'UPI' AFTER `payment_type`"
-));
-PREPARE stmt FROM @preparedStatement;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
+  -- payment_status
+  IF NOT EXISTS (
+    SELECT * FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'orders' AND COLUMN_NAME = 'payment_status'
+  ) THEN
+    ALTER TABLE `orders` ADD COLUMN `payment_status` ENUM('pending', 'paid', 'failed', 'refunded') NOT NULL DEFAULT 'paid';
+  END IF;
 
--- Add payment_status
-SET @preparedStatement = (SELECT IF(
-  (
-    SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = @dbname
-      AND TABLE_NAME = @tablename
-      AND COLUMN_NAME = "payment_status"
-  ) > 0,
-  "SELECT 1",
-  "ALTER TABLE `orders` ADD COLUMN `payment_status` ENUM('pending', 'paid', 'failed', 'refunded') NOT NULL DEFAULT 'paid' AFTER `payment_method`"
-));
-PREPARE stmt FROM @preparedStatement;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
+  -- delivery_charge
+  IF NOT EXISTS (
+    SELECT * FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'orders' AND COLUMN_NAME = 'delivery_charge'
+  ) THEN
+    ALTER TABLE `orders` ADD COLUMN `delivery_charge` DECIMAL(10,2) NOT NULL DEFAULT 0.00;
+  END IF;
 
--- Add delivery_tip
-SET @preparedStatement = (SELECT IF(
-  (
-    SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = @dbname
-      AND TABLE_NAME = @tablename
-      AND COLUMN_NAME = "delivery_tip"
-  ) > 0,
-  "SELECT 1",
-  "ALTER TABLE `orders` ADD COLUMN `delivery_tip` DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER `delivery_charge`"
-));
-PREPARE stmt FROM @preparedStatement;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
+  -- delivery_tip
+  IF NOT EXISTS (
+    SELECT * FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'orders' AND COLUMN_NAME = 'delivery_tip'
+  ) THEN
+    ALTER TABLE `orders` ADD COLUMN `delivery_tip` DECIMAL(10,2) NOT NULL DEFAULT 0.00;
+  END IF;
 
--- Add driver_name
-SET @preparedStatement = (SELECT IF(
-  (
-    SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = @dbname
-      AND TABLE_NAME = @tablename
-      AND COLUMN_NAME = "driver_name"
-  ) > 0,
-  "SELECT 1",
-  "ALTER TABLE `orders` ADD COLUMN `driver_name` VARCHAR(150) NULL DEFAULT NULL AFTER `special_instruction`"
-));
-PREPARE stmt FROM @preparedStatement;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
+  -- driver_name
+  IF NOT EXISTS (
+    SELECT * FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'orders' AND COLUMN_NAME = 'driver_name'
+  ) THEN
+    ALTER TABLE `orders` ADD COLUMN `driver_name` VARCHAR(150) NULL DEFAULT NULL;
+  END IF;
 
--- Add driver_phone
-SET @preparedStatement = (SELECT IF(
-  (
-    SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = @dbname
-      AND TABLE_NAME = @tablename
-      AND COLUMN_NAME = "driver_phone"
-  ) > 0,
-  "SELECT 1",
-  "ALTER TABLE `orders` ADD COLUMN `driver_phone` VARCHAR(20) NULL DEFAULT NULL AFTER `driver_name`"
-));
-PREPARE stmt FROM @preparedStatement;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
+  -- driver_phone
+  IF NOT EXISTS (
+    SELECT * FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'orders' AND COLUMN_NAME = 'driver_phone'
+  ) THEN
+    ALTER TABLE `orders` ADD COLUMN `driver_phone` VARCHAR(20) NULL DEFAULT NULL;
+  END IF;
+END$$
+DELIMITER ;
+
+CALL `AddDeliveryColumnsToOrders`();
+DROP PROCEDURE IF EXISTS `AddDeliveryColumnsToOrders`;
 
 
 -- 4. Create Order Tracking Events Table (Live Lifecycle Status Updates)
