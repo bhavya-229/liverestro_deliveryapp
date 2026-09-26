@@ -29,7 +29,7 @@ class HomeDiscoveryScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeDiscoveryScreen> createState() => _HomeDiscoveryScreenState();
 }
 
-class _HomeDiscoveryScreenState extends ConsumerState<HomeDiscoveryScreen> {
+class _HomeDiscoveryScreenState extends ConsumerState<HomeDiscoveryScreen> with WidgetsBindingObserver {
   final int _navIndex = 0;
 
   final List<String> _cuisines = const [
@@ -45,9 +45,24 @@ class _HomeDiscoveryScreenState extends ConsumerState<HomeDiscoveryScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(locationProvider.notifier).detectCurrentGPSLocation();
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // When user returns to app after granting location in Phone Settings
+    if (state == AppLifecycleState.resumed) {
+      ref.read(locationProvider.notifier).detectCurrentGPSLocation();
+    }
   }
 
   void _openStory(int initialIndex) {
