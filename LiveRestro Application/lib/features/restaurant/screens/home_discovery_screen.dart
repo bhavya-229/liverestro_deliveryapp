@@ -42,6 +42,14 @@ class _HomeDiscoveryScreenState extends ConsumerState<HomeDiscoveryScreen> {
     'South Indian',
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(locationProvider.notifier).detectCurrentGPSLocation();
+    });
+  }
+
   void _openStory(int initialIndex) {
     final stories = [
       StoryViewerItem(
